@@ -1,5 +1,6 @@
 -- ==========================================
--- Table Definitions & Imports for Non-GST Billing Database
+-- Single Unified SQL Import Script for Non-GST Bills
+-- Target Tables: erp_sellers & erp_sellers_items
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS erp_sellers (
@@ -26,10 +27,10 @@ CREATE TABLE IF NOT EXISTS erp_sellers_items (
 
 
 -- ==========================================
--- Non-GST Billing Database Insert Queries
+-- Non-GST Bills & Items Data Insert Queries
 -- ==========================================
 
--- Insert Bill: 2026AUG08A027 (INV-2026-2027-NONGST.json)
+-- Insert Non-GST Bill: 2026AUG08A027 (INV-2026-2027-NONGST.json)
 INSERT INTO erp_sellers (
     bill_id, business_name, bill_no, payment_mode, 
     total_items, total_quantity, grand_total, created_at
@@ -44,7 +45,7 @@ INSERT INTO erp_sellers_items (
 ('2c858f8f-6200-4cd0-8cf1-115bf2ca1ecc', '0a766c8b-ca4b-4a52-9044-4bbdc1152031', 2, 'Fresh Farm Veggies 1kg (Non-GST)', 'pack', 1.00, 85.00, 85.00)
 ON CONFLICT (item_id) DO NOTHING;
 
--- Insert Bill: 2026AUG08A028 (INV-2026-2028-NONGST.json)
+-- Insert Non-GST Bill: 2026AUG08A028 (INV-2026-2028-NONGST.json)
 INSERT INTO erp_sellers (
     bill_id, business_name, bill_no, payment_mode, 
     total_items, total_quantity, grand_total, created_at
