@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../data/bill_store.dart';
 import '../data/cart_store.dart';
+import '../models/bill.dart';
 import '../theme/app_theme.dart';
 import '../widgets/misc_widgets.dart';
 import '../widgets/primary_button.dart';
-import 'bill_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -315,7 +316,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '₹${items[index].product.price.toStringAsFixed(2)} / ${items[index].product.unit}',
+                                    '₹${items[index].product.price.toStringAsFixed(2)} / ${items[index].product.unit} · Stock: ${items[index].product.stock}',
                                     style: const TextStyle(
                                         fontSize: 12, color: AppTheme.textMuted),
                                   ),
@@ -346,7 +347,22 @@ class _CartScreenState extends State<CartScreen> {
                                       _stepperButton(
                                         icon: Icons.add,
                                         onTap: () {
-                                          setState(() => items[index].quantity++);
+                                          if (items[index].quantity <
+                                              items[index].product.stock) {
+                                            setState(() => items[index].quantity++);
+                                          } else {
+                                            ScaffoldMessenger.of(context)
+                                                .hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'Stock limit (${items[index].product.stock}) reached for ${items[index].product.name}!'),
+                                                duration:
+                                                    const Duration(seconds: 1),
+                                              ),
+                                            );
+                                          }
                                         },
                                       ),
                                     ],
@@ -492,22 +508,49 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                     const SizedBox(height: 14),
                     PrimaryButton(
-                      label: 'Generate & Preview Bill',
+                      label: 'Generate Bill',
                       icon: Icons.receipt_long_rounded,
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => BillScreen(
-                              subtotal: _subtotal,
-                              tax: _tax,
-                              total: _total,
-                              discount: _discount,
-                              customerName: CartStore.customerName,
-                              customerPhone: CartStore.customerPhone,
-                              shopName: CartStore.shopName,
-                              paymentMode: CartStore.paymentMode,
-                              employeeName: CartStore.activeEmployee,
+                      onPressed: () async {
+                        final nav = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
+                        final newBill = Bill(
+                          billNumber: BillStore.nextBillNumber(),
+                          date: DateTime.now(),
+                          employeeName: CartStore.activeEmployee,
+                          customerName: CartStore.customerName,
+                          customerPhone: CartStore.customerPhone,
+                          shopName: CartStore.shopName,
+                          paymentMode: CartStore.paymentMode,
+                          items: List.from(CartStore.items),
+                          subtotal: _subtotal,
+                          tax: _tax,
+                          discount: _discount,
+                          total: _total,
+                        );
+                        await BillStore.save(newBill);
+                        CartStore.clear();
+                        if (!mounted) return;
+                        nav.pop();
+                        messenger.hideCurrentSnackBar();
+                        messenger.showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppTheme.successGreen,
+                            behavior: SnackBarBehavior.floating,
+                            content: Row(
+                              children: [
+                                const Icon(Icons.folder_zip_rounded,
+                                    color: Colors.white),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Bill ${newBill.billNumber} generated & stored in backend folder! (₹${newBill.total.toStringAsFixed(2)})',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
                             ),
+                            duration: const Duration(seconds: 3),
                           ),
                         );
                       },

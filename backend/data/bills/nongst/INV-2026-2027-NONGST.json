@@ -1,0 +1,33 @@
+{
+  "bill_id": "0a766c8b-ca4b-4a52-9044-4bbdc1152031",
+  "business_name": "VELA AGENCY MAIN STORE",
+  "bill_no": "2026AUG08A027",
+  "payment_mode": "CASH",
+  "total_items": 2,
+  "total_quantity": "2.00",
+  "grand_total": "145.00",
+  "created_at": "2026-08-08 17:50:12.168370+00",
+  "items": [
+    {
+      "item_id": "bc34db06-c796-4832-8bf9-efba7c787c6b",
+      "invoice_id": "0a766c8b-ca4b-4a52-9044-4bbdc1152031",
+      "sno": 1,
+      "description": "Organic Farm Eggs 6pcs (Non-GST)",
+      "unit": "pack",
+      "quantity": "1.00",
+      "rate": "60.00",
+      "amount": "60.00"
+    },
+    {
+      "item_id": "2c858f8f-6200-4cd0-8cf1-115bf2ca1ecc",
+      "invoice_id": "0a766c8b-ca4b-4a52-9044-4bbdc1152031",
+      "sno": 2,
+      "description": "Fresh Farm Veggies 1kg (Non-GST)",
+      "unit": "pack",
+      "quantity": "1.00",
+      "rate": "85.00",
+      "amount": "85.00"
+    }
+  ],
+  "tax_type": "NON_GST"
+}

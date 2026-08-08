@@ -31,8 +31,8 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 110,
-              height: 110,
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(28),
@@ -44,29 +44,32 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.point_of_sale_rounded,
-                color: AppTheme.primaryBlue,
-                size: 56,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Image.asset(
+                  'assets/logo.jpg',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             const Text(
-              'Velan',
+              'Vela Agency',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 34,
+                fontSize: 32,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 0.5,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Smart Billing & Inventory',
+              'Grocery · Quality · Trust',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 14,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 1.0,
               ),
             ),
             const SizedBox(height: 48),

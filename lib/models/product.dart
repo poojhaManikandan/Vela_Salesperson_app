@@ -6,6 +6,7 @@ class Product {
   final int stock;
   final String imageUrl;
   final String unit;
+  final bool isGst;
 
   const Product({
     required this.id,
@@ -15,6 +16,7 @@ class Product {
     required this.stock,
     required this.imageUrl,
     this.unit = 'pcs',
+    this.isGst = true,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class Product {
         'stock': stock,
         'imageUrl': imageUrl,
         'unit': unit,
+        'isGst': isGst,
       };
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
@@ -35,6 +38,7 @@ class Product {
         stock: json['stock'] as int,
         imageUrl: json['imageUrl'] as String,
         unit: json['unit'] as String? ?? 'pcs',
+        isGst: json['isGst'] as bool? ?? true,
       );
 }
 

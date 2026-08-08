@@ -1,4 +1,5 @@
 import '../models/product.dart';
+import 'dummy_data.dart';
 
 class CartStore {
   CartStore._();
@@ -9,20 +10,40 @@ class CartStore {
   static String activeEmployee = 'Ramalingam';
   static String customerName = 'Walk-in Customer';
   static String customerPhone = '';
-  static String shopName = 'Velan Main Store';
+  static String shopName = 'Vela Agency Main Store';
   static String paymentMode = 'Cash';
   static double discount = 0.0;
+  static final Set<String> wishlistProductIds = {'P001', 'P003'};
 
-  static void add(Product product) {
+  static bool isWishlisted(String productId) => wishlistProductIds.contains(productId);
+
+  static void toggleWishlist(String productId) {
+    if (wishlistProductIds.contains(productId)) {
+      wishlistProductIds.remove(productId);
+    } else {
+      wishlistProductIds.add(productId);
+    }
+  }
+
+  static int get wishlistCount => DummyData.products.where((p) => isWishlisted(p.id)).length;
+
+  static bool add(Product product) {
     for (final item in items) {
       if (item.product.id == product.id) {
+        if (item.quantity >= product.stock) {
+          return false;
+        }
         item.quantity += 1;
         rememberProduct(product);
-        return;
+        return true;
       }
     }
-    items.add(CartItem(product: product));
-    rememberProduct(product);
+    if (product.stock > 0) {
+      items.add(CartItem(product: product));
+      rememberProduct(product);
+      return true;
+    }
+    return false;
   }
 
   static void decrement(Product product) {
@@ -37,8 +58,9 @@ class CartStore {
 
   static void setQuantity(Product product, int quantity) {
     items.removeWhere((item) => item.product.id == product.id);
-    if (quantity > 0) {
-      items.add(CartItem(product: product, quantity: quantity));
+    final clamped = quantity.clamp(0, product.stock);
+    if (clamped > 0) {
+      items.add(CartItem(product: product, quantity: clamped));
       rememberProduct(product);
     }
   }
@@ -52,7 +74,10 @@ class CartStore {
 
   static double get subtotal => items.fold(0, (sum, item) => sum + item.total);
 
-  static double get tax => subtotal * 0.05;
+  static double get gstSubtotal =>
+      items.where((item) => item.product.isGst).fold(0, (sum, item) => sum + item.total);
+
+  static double get tax => gstSubtotal * 0.05;
 
   static double get total => (subtotal + tax - discount).clamp(0.0, double.infinity);
 

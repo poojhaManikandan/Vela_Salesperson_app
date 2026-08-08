@@ -4,7 +4,7 @@ import '../models/bill.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_search_field.dart';
 import '../widgets/misc_widgets.dart';
-import 'bill_screen.dart';
+import '../widgets/bill_receipt_sheet.dart';
 
 class BillHistoryScreen extends StatefulWidget {
   final bool embedded;
@@ -399,12 +399,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                       ),
                                     ),
                                     onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              BillScreen(existingBill: bill),
-                                        ),
-                                      );
+                                      showBillReceiptModal(context, bill);
                                     },
                                     icon: const Icon(Icons.visibility_outlined,
                                         size: 16),
@@ -422,12 +417,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                       ),
                                     ),
                                     onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              BillScreen(existingBill: bill),
-                                        ),
-                                      );
+                                      showBillReceiptModal(context, bill);
                                     },
                                     icon: const Icon(Icons.print_outlined,
                                         size: 16),

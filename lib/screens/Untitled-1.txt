@@ -1,0 +1,7 @@
+# 
+
+{
+  "averageBillAmount": 0.0,
+  "todayBillCount": 0,
+  "todaySales": 0.0
+}

@@ -35,7 +35,28 @@ class _ProductScreenState extends State<ProductScreen> {
                 onTap: () => Navigator.of(context).pop(),
               ),
               actions: [
-                _circleIconButton(icon: Icons.favorite_border, onTap: () {}),
+                _circleIconButton(
+                  icon: CartStore.isWishlisted(product.id)
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  iconColor: CartStore.isWishlisted(product.id)
+                      ? AppTheme.dangerRed
+                      : AppTheme.textDark,
+                  onTap: () {
+                    setState(() {
+                      CartStore.toggleWishlist(product.id);
+                    });
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(CartStore.isWishlisted(product.id)
+                            ? 'Added ${product.name} to Wishlist'
+                            : 'Removed ${product.name} from Wishlist'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(width: 12),
               ],
               expandedHeight: 300,
@@ -214,7 +235,11 @@ class _ProductScreenState extends State<ProductScreen> {
     );
   }
 
-  Widget _circleIconButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _circleIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(left: 12),
       child: Material(
@@ -226,7 +251,7 @@ class _ProductScreenState extends State<ProductScreen> {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Icon(icon, size: 20, color: AppTheme.textDark),
+            child: Icon(icon, size: 20, color: iconColor ?? AppTheme.textDark),
           ),
         ),
       ),

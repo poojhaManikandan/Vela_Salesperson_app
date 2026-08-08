@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/bill_store.dart';
 import '../data/cart_store.dart';
 import '../data/dummy_data.dart';
+import '../models/bill.dart';
 import '../models/product.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_search_field.dart';
@@ -10,7 +11,6 @@ import '../widgets/product_card.dart';
 import '../widgets/primary_button.dart';
 import 'bill_history_screen.dart';
 import 'cart_screen.dart';
-import 'bill_screen.dart';
 import 'product_screen.dart';
 import 'settings_screen.dart';
 
@@ -76,10 +76,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _discountController.text = CartStore.discount > 0 ? CartStore.discount.toStringAsFixed(0) : '';
   }
 
+  List<String> get _categories => [
+        'All',
+        '❤️ Wishlist',
+        ...DummyData.categories.where((c) => c != 'All'),
+      ];
+
   List<Product> get _filteredProducts {
     return DummyData.products.where((p) {
-      final matchesCategory =
-          _selectedCategory == 'All' || p.category == _selectedCategory;
+      final matchesCategory = _selectedCategory == 'All'
+          ? true
+          : (_selectedCategory == '❤️ Wishlist'
+              ? CartStore.isWishlisted(p.id)
+              : p.category == _selectedCategory);
       final matchesQuery =
           p.name.toLowerCase().contains(_query.toLowerCase()) ||
           p.category.toLowerCase().contains(_query.toLowerCase()) ||
@@ -90,7 +99,191 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _countForCategory(String cat) {
     if (cat == 'All') return DummyData.products.length;
+    if (cat == '❤️ Wishlist') return CartStore.wishlistCount;
     return DummyData.products.where((p) => p.category == cat).length;
+  }
+
+  void _showWishlistSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final wishlistedProducts = DummyData.products
+              .where((p) => CartStore.isWishlisted(p.id))
+              .toList();
+
+          return Container(
+            height: MediaQuery.of(context).size.height * 0.7,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.favorite_rounded,
+                              color: AppTheme.dangerRed, size: 24),
+                          const SizedBox(width: 8),
+                          Text(
+                            'My Wishlist (${wishlistedProducts.length})',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (wishlistedProducts.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              CartStore.wishlistProductIds.clear();
+                            });
+                            setModalState(() {});
+                          },
+                          child: const Text(
+                            'Clear All',
+                            style: TextStyle(
+                              color: AppTheme.dangerRed,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                if (wishlistedProducts.isEmpty)
+                  const Expanded(
+                    child: EmptyState(
+                      icon: Icons.favorite_border_rounded,
+                      title: 'Your Wishlist is Empty',
+                      subtitle:
+                          'Tap the heart icon on any product card to save your favorite items here for quick billing.',
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: wishlistedProducts.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final product = wishlistedProducts[index];
+                        final outOfStock = product.stock == 0;
+                        return Card(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 4),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                product.imageUrl,
+                                width: 44,
+                                height: 44,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 44,
+                                  height: 44,
+                                  color: AppTheme.backgroundLight,
+                                  child: const Icon(
+                                    Icons.inventory_2_outlined,
+                                    size: 20,
+                                    color: AppTheme.textMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              product.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700, fontSize: 14),
+                            ),
+                            subtitle: Text(
+                              '₹${product.price.toStringAsFixed(2)} / ${product.unit}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppTheme.textMuted),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.favorite_rounded,
+                                      color: AppTheme.dangerRed, size: 20),
+                                  onPressed: () {
+                                    setState(() {
+                                      CartStore.toggleWishlist(product.id);
+                                    });
+                                    setModalState(() {});
+                                  },
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryBlue,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 6),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  onPressed: outOfStock
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            CartStore.add(product);
+                                          });
+                                          ScaffoldMessenger.of(context)
+                                              .hideCurrentSnackBar();
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  'Added ${product.name} to bill'),
+                                              duration:
+                                                  const Duration(seconds: 1),
+                                            ),
+                                          );
+                                        },
+                                  child: const Text(
+                                    'Add',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -140,20 +333,32 @@ class _HomeScreenState extends State<HomeScreen> {
       title: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(Icons.point_of_sale_rounded,
-                color: Colors.white, size: 20),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/logo.jpg',
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Velan POS',
+              const Text('Vela Agency',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               Text(CartStore.shopName,
                   style: const TextStyle(
@@ -217,7 +422,45 @@ class _HomeScreenState extends State<HomeScreen> {
               .toList(),
         ),
 
-        // Compact/Grid View Toggle
+        // Wishlist Quick Access Button (Top right, near show menu toggle)
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: Icon(
+                CartStore.wishlistCount > 0
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: CartStore.wishlistCount > 0 ? AppTheme.dangerRed : AppTheme.textDark,
+              ),
+              tooltip: 'Wishlist (${CartStore.wishlistCount})',
+              onPressed: () => _showWishlistSheet(context),
+            ),
+            if (CartStore.wishlistCount > 0)
+              Positioned(
+                right: 4,
+                top: 4,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.dangerRed,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${CartStore.wishlistCount}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+
+        // Compact/Grid View Toggle ("Show menu")
         IconButton(
           icon: Icon(_isListView ? Icons.grid_view_rounded : Icons.view_list_rounded),
           tooltip: _isListView ? 'Show Grid View' : 'Show Compact List View',
@@ -471,7 +714,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       backgroundColor:
                           AppTheme.primaryBlue.withValues(alpha: 0.12),
                       child: Text(
-                        product.name[0],
+                        product.name.isNotEmpty ? product.name[0] : '?',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -499,6 +742,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     onPressed: () {
+                      if (product.stock == 0) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} is out of stock!'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                        return;
+                      }
                       setState(() {
                         CartStore.add(product);
                       });
@@ -525,10 +778,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: DummyData.categories.length,
+              itemCount: _categories.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, index) {
-                final category = DummyData.categories[index];
+                final category = _categories[index];
                 final selected = category == _selectedCategory;
                 final count = _countForCategory(category);
                 return ChoiceChip(
@@ -610,8 +863,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       setState(() {});
                     },
                     onAddToCart: () {
+                      final added = CartStore.add(product);
+                      setState(() {});
+                      if (!added) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                'Cannot add more ${product.name}. Stock limit (${product.stock}) reached!'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
+                    onToggleWishlist: () {
                       setState(() {
-                        CartStore.add(product);
+                        CartStore.toggleWishlist(product.id);
                       });
                     },
                   );
@@ -649,8 +916,22 @@ class _HomeScreenState extends State<HomeScreen> {
                           setState(() {});
                         },
                         onAddToCart: () {
+                          final added = CartStore.add(product);
+                          setState(() {});
+                          if (!added) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Cannot add more ${product.name}. Stock limit (${product.stock}) reached!'),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          }
+                        },
+                        onToggleWishlist: () {
                           setState(() {
-                            CartStore.add(product);
+                            CartStore.toggleWishlist(product.id);
                           });
                         },
                       );
@@ -886,9 +1167,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                                 GestureDetector(
                                   onTap: () {
-                                    setState(() {
-                                      CartStore.add(item.product);
-                                    });
+                                    final added = CartStore.add(item.product);
+                                    setState(() {});
+                                    if (!added) {
+                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'Max stock limit (${item.product.stock}) reached for ${item.product.name}!'),
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
@@ -1010,28 +1300,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 12),
                   PrimaryButton(
-                    label: 'Generate & Preview Bill',
+                    label: 'Generate Bill',
                     icon: Icons.receipt_long_rounded,
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => BillScreen(
-                            subtotal: CartStore.subtotal,
-                            tax: CartStore.tax,
-                            total: CartStore.total,
-                            discount: CartStore.discount,
-                            customerName: CartStore.customerName,
-                            customerPhone: CartStore.customerPhone,
-                            shopName: CartStore.shopName,
-                            paymentMode: CartStore.paymentMode,
-                            employeeName: CartStore.activeEmployee,
-                          ),
-                        ),
-                      ).then((_) {
+                    onPressed: () async {
+                      final newBill = Bill(
+                        billNumber: BillStore.nextBillNumber(),
+                        date: DateTime.now(),
+                        employeeName: CartStore.activeEmployee,
+                        customerName: CartStore.customerName,
+                        customerPhone: CartStore.customerPhone,
+                        shopName: CartStore.shopName,
+                        paymentMode: CartStore.paymentMode,
+                        items: List.from(CartStore.items),
+                        subtotal: CartStore.subtotal,
+                        tax: CartStore.tax,
+                        discount: CartStore.discount,
+                        total: CartStore.total,
+                      );
+                      final messenger = ScaffoldMessenger.of(context);
+                      await BillStore.save(newBill);
+                      CartStore.clear();
+                      if (mounted) {
                         setState(() {
                           _syncControllers();
                         });
-                      });
+                      }
+                      messenger.hideCurrentSnackBar();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppTheme.successGreen,
+                          behavior: SnackBarBehavior.floating,
+                          content: Row(
+                            children: [
+                              const Icon(Icons.folder_zip_rounded,
+                                  color: Colors.white),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Bill ${newBill.billNumber} generated & stored in backend folder! (₹${newBill.total.toStringAsFixed(2)})',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
                     },
                   ),
                 ],

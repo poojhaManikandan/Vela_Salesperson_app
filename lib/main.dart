@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'data/bill_store.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await BillStore.load();
   runApp(const VelanApp());
 }
 

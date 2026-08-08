@@ -9,6 +9,7 @@ class ProductCard extends StatelessWidget {
   final bool isCompactList;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+  final VoidCallback? onToggleWishlist;
 
   const ProductCard({
     super.key,
@@ -16,15 +17,17 @@ class ProductCard extends StatelessWidget {
     this.isCompactList = false,
     this.onTap,
     this.onAddToCart,
+    this.onToggleWishlist,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool outOfStock = product.stock == 0;
     final int qtyInCart = CartStore.quantityFor(product);
+    final bool isFav = CartStore.isWishlisted(product.id);
 
     if (isCompactList) {
-      return _buildCompactList(context, outOfStock, qtyInCart);
+      return _buildCompactList(context, outOfStock, qtyInCart, isFav);
     }
 
     return Card(
@@ -50,10 +53,32 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    // Wishlist Toggle Heart Button
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Material(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: const CircleBorder(),
+                        elevation: 2,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: onToggleWishlist,
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Icon(
+                              isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                              size: 16,
+                              color: isFav ? AppTheme.dangerRed : AppTheme.textDark,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     if (outOfStock)
                       Positioned(
                         top: 8,
-                        left: 8,
+                        left: 42,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
@@ -97,6 +122,27 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
+                    Positioned(
+                      top: 8,
+                      right: qtyInCart > 0 ? 80 : 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: product.isGst
+                              ? AppTheme.primaryBlue.withValues(alpha: 0.85)
+                              : Colors.orange.shade800,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          product.isGst ? 'GST 5%' : 'NON-GST',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -169,7 +215,7 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactList(BuildContext context, bool outOfStock, int qtyInCart) {
+  Widget _buildCompactList(BuildContext context, bool outOfStock, int qtyInCart, bool isFav) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
@@ -228,11 +274,19 @@ class ProductCard extends StatelessWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            IconButton(
+              icon: Icon(
+                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                size: 20,
+                color: isFav ? AppTheme.dangerRed : AppTheme.textMuted,
+              ),
+              onPressed: onToggleWishlist,
+            ),
             Text(
               '₹${product.price.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppTheme.textDark),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             if (!outOfStock && onAddToCart != null)
               Material(
                 color: AppTheme.primaryBlue.withValues(alpha: 0.12),

@@ -41,11 +41,18 @@ class BillScreen extends StatefulWidget {
 class _BillScreenState extends State<BillScreen> {
   late Bill _bill;
   bool _isPrinting = false;
-  PrinterDevice _selectedPrinter = DummyData.printers.first;
+  late PrinterDevice _selectedPrinter;
 
   @override
   void initState() {
     super.initState();
+    _selectedPrinter = DummyData.printers.isNotEmpty
+        ? DummyData.printers.first
+        : const PrinterDevice(
+            id: 'PR01',
+            name: 'Standard Thermal Printer',
+            type: 'Bluetooth',
+          );
     if (widget.existingBill != null) {
       _bill = widget.existingBill!;
     } else {
@@ -73,6 +80,7 @@ class _BillScreenState extends State<BillScreen> {
 
   Future<void> _autoSaveBill() async {
     await BillStore.save(_bill);
+    CartStore.clear();
   }
 
   void _printReceipt() async {
@@ -209,21 +217,30 @@ class _BillScreenState extends State<BillScreen> {
                           child: Column(
                             children: [
                               Container(
-                                width: 44,
-                                height: 44,
+                                width: 50,
+                                height: 50,
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryBlue,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Icon(
-                                  Icons.store_rounded,
                                   color: Colors.white,
-                                  size: 24,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.08),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.asset(
+                                    'assets/logo.jpg',
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 10),
                               const Text(
-                                'VELAN SUPERMARKET',
+                                'VELA AGENCY',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900,

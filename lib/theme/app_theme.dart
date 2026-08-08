@@ -127,6 +127,10 @@ class AppTheme {
           );
         }),
       ),
+      listTileTheme: const ListTileThemeData(
+        tileColor: Colors.transparent,
+        selectedTileColor: Colors.transparent,
+      ),
       dividerTheme: DividerThemeData(color: Colors.grey.shade200, thickness: 1),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,

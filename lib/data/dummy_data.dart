@@ -124,6 +124,36 @@ class DummyData {
       imageUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400',
       unit: 'bottle',
     ),
+    Product(
+      id: 'P013',
+      name: 'Organic Farm Eggs 6pcs (Non-GST)',
+      category: 'Dairy',
+      price: 60.00,
+      stock: 50,
+      imageUrl: 'https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400',
+      unit: 'pack',
+      isGst: false,
+    ),
+    Product(
+      id: 'P014',
+      name: 'Fresh Country Milk 500ml (Non-GST)',
+      category: 'Dairy',
+      price: 32.00,
+      stock: 40,
+      imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400',
+      unit: 'pouch',
+      isGst: false,
+    ),
+    Product(
+      id: 'P015',
+      name: 'Fresh Farm Veggies 1kg (Non-GST)',
+      category: 'Groceries',
+      price: 85.00,
+      stock: 30,
+      imageUrl: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400',
+      unit: 'pack',
+      isGst: false,
+    ),
   ];
 
   static List<PrinterDevice> printers = [
@@ -199,8 +229,8 @@ class DummyData {
 
   static List<Bill> get bills => [
         Bill(
-          billNumber: 'INV-2026-0142',
-          date: DateTime(2026, 7, 25, 18, 42),
+          billNumber: 'INV-${DateTime.now().year}-0142',
+          date: DateTime.now().subtract(const Duration(minutes: 45)),
           employeeName: 'Ramalingam',
           items: [
             CartItem(product: products[0], quantity: 1),
@@ -211,8 +241,8 @@ class DummyData {
           total: 819.00,
         ),
         Bill(
-          billNumber: 'INV-2026-0141',
-          date: DateTime(2026, 7, 25, 15, 10),
+          billNumber: 'INV-${DateTime.now().year}-0141',
+          date: DateTime.now().subtract(const Duration(hours: 3, minutes: 15)),
           employeeName: 'Ramalingam',
           items: [
             CartItem(product: products[5], quantity: 3),
@@ -223,8 +253,8 @@ class DummyData {
           total: 197.40,
         ),
         Bill(
-          billNumber: 'INV-2026-0140',
-          date: DateTime(2026, 7, 24, 12, 5),
+          billNumber: 'INV-${DateTime.now().year}-0140',
+          date: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
           employeeName: 'Divya',
           items: [
             CartItem(product: products[9], quantity: 1),
@@ -236,8 +266,8 @@ class DummyData {
           status: 'Refunded',
         ),
         Bill(
-          billNumber: 'INV-2026-0139',
-          date: DateTime(2026, 7, 24, 9, 30),
+          billNumber: 'INV-${DateTime.now().year}-0139',
+          date: DateTime.now().subtract(const Duration(days: 1, hours: 5)),
           employeeName: 'Ramalingam',
           items: [
             CartItem(product: products[1], quantity: 2),

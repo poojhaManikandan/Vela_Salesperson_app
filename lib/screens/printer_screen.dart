@@ -22,9 +22,11 @@ class _PrinterScreenState extends State<PrinterScreen> with SingleTickerProvider
   void initState() {
     super.initState();
     _printers = List.from(DummyData.printers);
-    _selectedId = _printers
-        .firstWhere((p) => p.isConnected, orElse: () => _printers.first)
-        .id;
+    _selectedId = _printers.isNotEmpty
+        ? _printers
+            .firstWhere((p) => p.isConnected, orElse: () => _printers.first)
+            .id
+        : '';
 
     _scanAnimController = AnimationController(
       vsync: this,
@@ -375,10 +377,16 @@ class _PrinterScreenState extends State<PrinterScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final selectedPrinter = _printers.firstWhere(
-      (p) => p.id == _selectedId,
-      orElse: () => _printers.first,
-    );
+    final selectedPrinter = _printers.isNotEmpty
+        ? _printers.firstWhere(
+            (p) => p.id == _selectedId,
+            orElse: () => _printers.first,
+          )
+        : const PrinterDevice(
+            id: 'PR00',
+            name: 'No Printer Selected',
+            type: 'None',
+          );
 
     final btCount = _printers.where((p) => p.type == 'Bluetooth').length;
 
