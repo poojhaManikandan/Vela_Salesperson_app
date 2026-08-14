@@ -34,7 +34,9 @@ class _CartScreenState extends State<CartScreen> {
     _shopNameController = TextEditingController(text: CartStore.shopName);
     _discountController = TextEditingController(
         text: CartStore.discount > 0
-            ? CartStore.discount.toStringAsFixed(0)
+            ? (CartStore.discount == CartStore.discount.toInt()
+                ? CartStore.discount.toInt().toString()
+                : CartStore.discount.toString())
             : '');
   }
 
@@ -55,8 +57,11 @@ class _CartScreenState extends State<CartScreen> {
   void _applyDiscount(double amount) {
     setState(() {
       CartStore.discount = amount;
-      _discountController.text =
-          amount > 0 ? amount.toStringAsFixed(0) : '';
+      _discountController.text = amount > 0
+          ? (amount == amount.toInt()
+              ? amount.toInt().toString()
+              : amount.toString())
+          : '';
     });
   }
 

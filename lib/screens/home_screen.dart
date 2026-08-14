@@ -58,7 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _shopNameController = TextEditingController(text: CartStore.shopName);
     _amountPaidController = TextEditingController(
       text: CartStore.amountPaid > 0
-          ? CartStore.amountPaid.toStringAsFixed(0)
+          ? (CartStore.amountPaid == CartStore.amountPaid.toInt()
+              ? CartStore.amountPaid.toInt().toString()
+              : CartStore.amountPaid.toString())
           : '',
     );
   }
@@ -113,8 +115,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _customerNameController.text = CartStore.customerName;
     _customerPhoneController.text = CartStore.customerPhone;
     _shopNameController.text = CartStore.shopName;
-    _amountPaidController.text =
-        CartStore.amountPaid > 0 ? CartStore.amountPaid.toStringAsFixed(0) : '';
+    _amountPaidController.text = CartStore.amountPaid > 0 
+        ? (CartStore.amountPaid == CartStore.amountPaid.toInt() 
+            ? CartStore.amountPaid.toInt().toString() 
+            : CartStore.amountPaid.toString()) 
+        : '';
   }
 
   List<String> get _categories {
@@ -1212,9 +1217,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           keyboardType: TextInputType.number,
                           onChanged: (val) {
                             var parsed = double.tryParse(val) ?? 0.0;
-                            if (parsed > CartStore.total) {
-                              parsed = CartStore.total;
-                              _amountPaidController.text = parsed.toStringAsFixed(0);
+                            var maxAllowed = double.parse(CartStore.total.toStringAsFixed(2));
+                            if (parsed > maxAllowed) {
+                              parsed = maxAllowed;
+                              _amountPaidController.text = parsed == parsed.toInt() ? parsed.toInt().toString() : parsed.toString();
                               _amountPaidController.selection = TextSelection.fromPosition(
                                 TextPosition(offset: _amountPaidController.text.length),
                               );
