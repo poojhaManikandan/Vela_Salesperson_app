@@ -36,4 +36,37 @@ class BackendService {
       return false;
     }
   }
+
+  /// Sends a PATCH request to update a bill's status (e.g. from PENDING to PAID)
+  static Future<bool> updateBillStatus(String billId, String newStatus, {double? amountPaid}) async {
+    try {
+      final body = {'status': newStatus};
+      if (amountPaid != null) {
+        body['amountPaid'] = amountPaid.toString();
+      }
+      
+      final response = await http.patch(
+        Uri.parse('$baseUrl/bills/$billId/status'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      ).timeout(const Duration(seconds: 4));
+
+      if (response.statusCode == 200) {
+        if (kDebugMode) {
+          print('[BackendService] Successfully updated bill $billId status to $newStatus');
+        }
+        return true;
+      } else {
+        if (kDebugMode) {
+          print('[BackendService] Server error updating status: ${response.statusCode} - ${response.body}');
+        }
+        return false;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('[BackendService] Backend connection notice: $e');
+      }
+      return false;
+    }
+  }
 }

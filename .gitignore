@@ -1,3 +1,4 @@
+# Flutter/Dart
 .dart_tool/
 .packages
 build/
@@ -7,5 +8,17 @@ build/
 .pub/
 *.iml
 .idea/
+*.log
+
+# Platform build caches
 ios/Pods/
 android/.gradle/
+android/.kotlin/
+
+# Python backend
+__pycache__/
+*.pyc
+backend/.env
+
+# Runtime-generated local bill store (backend writes these)
+backend/data/

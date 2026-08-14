@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../data/cart_store.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
 import 'home_screen.dart';
@@ -14,17 +16,17 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _employeeIdController = TextEditingController(text: 'EMP1024');
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  final _mobileController = TextEditingController();
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _employeeIdController.dispose();
-    _passwordController.dispose();
+    _mobileController.dispose();
     super.dispose();
   }
+
+  // Only this number is allowed to log in
+  static const String _allowedNumber = '9344486055';
 
   void _handleLogin() {
     if (!(_formKey.currentState?.validate() ?? true)) {
@@ -33,8 +35,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final enteredId = _employeeIdController.text.trim();
-    CartStore.activeEmployee = enteredId.isEmpty ? 'Ramalingam' : enteredId;
+    final enteredMobile = _mobileController.text.trim();
+    CartStore.activeEmployee = enteredMobile;
 
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
@@ -45,33 +47,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void _showForgotPasswordDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text(
-          'Reset Password',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-        ),
-        content: const Text(
-          'Please contact your Store Manager or Administrator to reset your cashier credentials.',
-          style: TextStyle(fontSize: 13.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: context.surfaceColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -120,98 +99,65 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 20),
 
                         // Store Title & Subtitle
-                        const Text(
-                          'Vela Agency',
+                        Text(
+                          'Vela Agency'.tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w900,
-                            color: AppTheme.textDark,
+                            color: context.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Sign in to start billing',
+                        Text(
+                          'Sign in to start billing'.tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 13.5,
-                            color: AppTheme.textMuted,
+                            color: context.textSecondary,
                           ),
                         ),
 
                         const SizedBox(height: 32),
 
-                        // Employee ID Input Field
-                        const Text(
-                          'Employee ID',
-                          style: TextStyle(
+                        // Mobile Number Input Field
+                        Text(
+                          'Mobile Number'.tr,
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
-                          controller: _employeeIdController,
+                          controller: _mobileController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _handleLogin(),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
                           validator: (val) {
-                            if (val == null || val.trim().isEmpty) {
-                              return 'Please enter your Employee ID';
+                            final digits = (val ?? '').trim();
+                            if (digits.isEmpty) {
+                              return 'Please enter your mobile number';
+                            }
+                            if (digits.length != 10) {
+                              return 'Mobile number must be 10 digits';
+                            }
+                            if (digits != _allowedNumber) {
+                              return 'Access denied. Unauthorized number.';
                             }
                             return null;
                           },
                           decoration: const InputDecoration(
-                            hintText: 'Enter your Employee ID (e.g. EMP1024)',
-                            prefixIcon: Icon(Icons.badge_outlined, size: 20),
+                            hintText: 'Enter 10-digit mobile number',
+                            prefixIcon: Icon(Icons.phone_outlined, size: 20),
                           ),
                         ),
 
                         const SizedBox(height: 20),
-
-                        // Password Input Field
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          validator: (val) {
-                            if (val == null || val.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            return null;
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Enter password',
-                            prefixIcon: const Icon(Icons.lock_outline, size: 20),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                                size: 20,
-                              ),
-                              onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        // Forgot Password Link
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _showForgotPasswordDialog,
-                            child: const Text('Forgot password?'),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
 
                         // Login Button
                         PrimaryButton(
@@ -224,12 +170,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 28),
 
                         // Footer Text
-                        const Text(
+                        Text(
                           'Vela Agency POS · Grocery · Quality · Trust',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textMuted,
+                            color: context.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),

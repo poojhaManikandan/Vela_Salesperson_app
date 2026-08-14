@@ -22,8 +22,8 @@ class AppSearchField extends StatelessWidget {
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(color: AppTheme.textMuted),
-        prefixIcon: const Icon(Icons.search, color: AppTheme.textMuted),
+        hintStyle: TextStyle(color: context.textSecondary),
+        prefixIcon: Icon(Icons.search, color: context.textSecondary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,

@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/cart_store.dart';
+import '../data/theme_controller.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'printer_screen.dart';
@@ -13,8 +17,39 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _darkMode = false;
+  static const _notificationsKey = 'velan_notifications_enabled';
+
   bool _notifications = true;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((prefs) {
+      if (mounted) {
+        setState(() {
+          _notifications = prefs.getBool(_notificationsKey) ?? true;
+        });
+      }
+    });
+  }
+
+  Future<void> _toggleNotifications(bool value) async {
+    setState(() => _notifications = value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notificationsKey, value);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          value
+              ? 'Notifications enabled for this device.'
+              : 'Notifications disabled for this device.',
+        ),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +58,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (widget.embedded) return body;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(
+        title: Text('Settings'.tr),
+      ),
       body: SafeArea(child: body),
     );
   }
@@ -33,62 +70,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
         if (widget.embedded) ...[
-          const Text(
-            'Settings',
-            style: TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w800, color: AppTheme.textDark),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
         ],
+
+        // User Profile Card
         Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppTheme.primaryBlue,
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: AppTheme.primaryGreen,
                   child: Text(
-                    'R',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800),
+                    CartStore.activeEmployee.isNotEmpty
+                        ? CartStore.activeEmployee[0].toUpperCase()
+                        : 'C',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                const Expanded(
+                const SizedBox(width: 14),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Ramalingam',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w800)),
-                      SizedBox(height: 3),
-                      Text('EMP1024 · Store Cashier',
-                          style: TextStyle(
-                              fontSize: 12.5, color: AppTheme.textMuted)),
+                      Text(
+                        CartStore.activeEmployee,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: context.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Store Cashier'.tr,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryBlue),
-                  onPressed: () {},
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        const _SettingsSectionLabel('Preferences'),
+
+        const SizedBox(height: 20),
+        _SettingsSectionLabel('PREFERENCES'.tr),
         const SizedBox(height: 8),
         Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: Column(
             children: [
               _SettingsTile(
                 icon: Icons.print_outlined,
-                title: 'Printer Settings',
-                subtitle: 'Manage connected printers',
+                title: 'Printer Settings'.tr,
+                subtitle: 'Manage connected printer'.tr,
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const PrinterScreen()),
@@ -96,63 +143,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               const Divider(height: 1, indent: 56),
-              _SettingsTile(
-                icon: Icons.dark_mode_outlined,
-                title: 'Dark Theme',
-                subtitle: 'Switch between light and dark mode',
-                trailing: Switch(
-                  value: _darkMode,
-                  activeThumbColor: AppTheme.primaryBlue,
-                  onChanged: (v) => setState(() => _darkMode = v),
+              ValueListenableBuilder<bool>(
+                valueListenable: ThemeController.instance,
+                builder: (context, dark, _) => _SettingsTile(
+                  icon: Icons.dark_mode_outlined,
+                  title: 'Dark Theme'.tr,
+                  subtitle: dark ? 'Dark mode is ON'.tr : 'Switch light / dark mode'.tr,
+                  trailing: Switch(
+                    value: dark,
+                    activeColor: AppTheme.primaryGreen,
+                    onChanged: (v) => ThemeController.instance.setDark(v),
+                  ),
+                ),
+              ),
+              const Divider(height: 1, indent: 56),
+              ValueListenableBuilder<bool>(
+                valueListenable: TranslationService.isTamil,
+                builder: (context, isTamil, _) => _SettingsTile(
+                  icon: Icons.language_outlined,
+                  title: 'Language'.tr,
+                  subtitle: isTamil ? 'Tamil Enabled'.tr : 'Switch to Tamil or English'.tr,
+                  trailing: Switch(
+                    value: isTamil,
+                    activeColor: AppTheme.primaryGreen,
+                    onChanged: (v) => TranslationService.toggleLanguage(v),
+                  ),
                 ),
               ),
               const Divider(height: 1, indent: 56),
               _SettingsTile(
                 icon: Icons.notifications_outlined,
-                title: 'Notifications',
-                subtitle: 'Low stock and order alerts',
+                title: 'Notifications'.tr,
+                subtitle: 'Order alerts and reminders'.tr,
                 trailing: Switch(
                   value: _notifications,
-                  activeThumbColor: AppTheme.primaryBlue,
-                  onChanged: (v) => setState(() => _notifications = v),
+                  activeColor: AppTheme.primaryGreen,
+                  onChanged: _toggleNotifications,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        const _SettingsSectionLabel('Account'),
+
+        const SizedBox(height: 20),
+        _SettingsSectionLabel('APP INFO'.tr),
         const SizedBox(height: 8),
         Card(
-          child: Column(
-            children: [
-              _SettingsTile(
-                icon: Icons.lock_outline,
-                title: 'Change Password',
-                onTap: () {},
-              ),
-              const Divider(height: 1, indent: 56),
-              _SettingsTile(
-                icon: Icons.help_outline,
-                title: 'Help & Support',
-                onTap: () {},
-              ),
-              const Divider(height: 1, indent: 56),
-              _SettingsTile(
-                icon: Icons.info_outline,
-                title: 'About Velan',
-                subtitle: 'Version 1.0.0',
-                onTap: () {},
-              ),
-            ],
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'About Velan'.tr,
+            subtitle: 'Version 1.0.0'.tr,
+            onTap: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'Velan Billing',
+                applicationVersion: '1.0.0',
+                applicationIcon: const Icon(
+                  Icons.shopping_bag_rounded,
+                  size: 32,
+                  color: AppTheme.primaryGreen,
+                ),
+              );
+            },
           ),
         ),
-        const SizedBox(height: 24),
+
+        const SizedBox(height: 20),
         Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: _SettingsTile(
             icon: Icons.logout_rounded,
             iconColor: AppTheme.dangerRed,
-            title: 'Logout',
+            title: 'Logout'.tr,
             titleColor: AppTheme.dangerRed,
             onTap: () {
               Navigator.of(context).pushAndRemoveUntil(
@@ -177,11 +242,11 @@ class _SettingsSectionLabel extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         label,
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: AppTheme.textMuted,
-          letterSpacing: 0.4,
+          color: context.textSecondary,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -211,27 +276,29 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
       leading: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: (iconColor ?? AppTheme.primaryBlue).withValues(alpha: 0.1),
+          color: (iconColor ?? AppTheme.primaryGreen).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 18, color: iconColor ?? AppTheme.primaryBlue),
+        child: Icon(icon, size: 18, color: iconColor ?? AppTheme.primaryGreen),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
-          color: titleColor ?? AppTheme.textDark,
+          color: titleColor ?? context.textPrimary,
         ),
       ),
       subtitle: subtitle != null
-          ? Text(subtitle!,
-              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted))
+          ? Text(
+              subtitle!,
+              style: TextStyle(fontSize: 12, color: context.textSecondary),
+            )
           : null,
       trailing: trailing ??
           (onTap != null

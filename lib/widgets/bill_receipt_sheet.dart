@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/bill.dart';
+import '../services/printer_service.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import 'primary_button.dart';
 
 /// Clean inline receipt modal dialog replacing the dedicated full-page screen.
-void showBillReceiptModal(BuildContext context, Bill bill) {
-  showModalBottomSheet(
+Future<void> showBillReceiptModal(BuildContext context, Bill bill) {
+  return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -26,21 +28,55 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
   bool _isPrinting = false;
 
   void _handlePrint() async {
+    final service = PrinterService.instance;
+
+    if (!service.isSupported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bluetooth printing requires a physical Android/iOS device. '
+            'Receipt shown on screen.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!service.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('No printer connected. Connect one in Printer settings.'.tr),
+        ),
+      );
+      return;
+    }
+
     setState(() => _isPrinting = true);
-    await Future.delayed(const Duration(milliseconds: 1400));
+    String? error;
+    try {
+      await service.printBill(widget.bill);
+    } catch (e) {
+      error = '$e';
+    }
     if (!mounted) return;
     setState(() => _isPrinting = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: AppTheme.successGreen,
+        backgroundColor:
+            error == null ? AppTheme.successGreen : AppTheme.dangerRed,
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
+            Icon(
+              error == null ? Icons.check_circle_outline : Icons.error_outline,
+              color: Colors.white,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Receipt for ${widget.bill.billNumber} printed successfully!',
+                error ??
+                    'Receipt for ${widget.bill.billNumber} printed successfully!',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -57,9 +93,9 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       child: Column(
@@ -104,14 +140,13 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.textDark,
                       ),
                     ),
                     Text(
                       'Invoice ${bill.billNumber} · ${bill.paymentMode}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12.5,
-                        color: AppTheme.textMuted,
+                        color: context.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -133,9 +168,9 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.backgroundLight,
+                  color: context.surfaceAlt,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,24 +188,30 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              bill.shopName,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                bill.shopName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
-                            ),
-                            Text(
-                              'Cashier: ${bill.employeeName} · Customer: ${bill.customerName}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppTheme.textMuted,
+                              Text(
+                                'Cashier: ${bill.employeeName} · Customer: ${bill.customerName}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.textSecondary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -182,7 +223,6 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -218,11 +258,12 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                       children: [
                         const Text(
                           'Subtotal:',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          style: TextStyle(fontSize: 12),
                         ),
                         Text(
                           '₹${bill.subtotal.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -232,11 +273,12 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                       children: [
                         const Text(
                           'GST Tax (5%):',
-                          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                          style: TextStyle(fontSize: 12),
                         ),
                         Text(
                           '₹${bill.tax.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -247,25 +289,78 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                         children: [
                           const Text(
                             'Discount:',
-                            style: TextStyle(fontSize: 12, color: AppTheme.successGreen),
+                            style: TextStyle(
+                                fontSize: 12, color: AppTheme.successGreen),
                           ),
                           Text(
                             '-₹${bill.discount.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.successGreen),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.successGreen),
                           ),
                         ],
                       ),
                     ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Payable:',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '₹${bill.total.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Amount Paid:',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '₹${bill.amountPaid.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Balance Amount:',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '₹${bill.dueAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: bill.amountPaid >= bill.total
+                                ? AppTheme.successGreen
+                                : AppTheme.dangerRed,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Total Amount:',
+                          'Final Amount:',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
-                            color: AppTheme.textDark,
                           ),
                         ),
                         Text(
@@ -273,7 +368,7 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
-                            color: AppTheme.primaryBlue,
+                            color: AppTheme.primaryGreen,
                           ),
                         ),
                       ],

@@ -34,42 +34,20 @@ class _ProductScreenState extends State<ProductScreen> {
                 icon: Icons.arrow_back,
                 onTap: () => Navigator.of(context).pop(),
               ),
-              actions: [
-                _circleIconButton(
-                  icon: CartStore.isWishlisted(product.id)
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  iconColor: CartStore.isWishlisted(product.id)
-                      ? AppTheme.dangerRed
-                      : AppTheme.textDark,
-                  onTap: () {
-                    setState(() {
-                      CartStore.toggleWishlist(product.id);
-                    });
-                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(CartStore.isWishlisted(product.id)
-                            ? 'Added ${product.name} to Wishlist'
-                            : 'Removed ${product.name} from Wishlist'),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 12),
+              actions: const [
+                SizedBox(width: 12),
               ],
               expandedHeight: 300,
               flexibleSpace: FlexibleSpaceBar(
                 background: Container(
-                  color: AppTheme.backgroundLight,
+                  color: context.surfaceAlt,
                   child: Image.network(
                     product.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                       Icons.inventory_2_outlined,
                       size: 72,
-                      color: AppTheme.textMuted,
+                      color: context.textSecondary,
                     ),
                   ),
                 ),
@@ -77,9 +55,10 @@ class _ProductScreenState extends State<ProductScreen> {
             ),
             SliverToBoxAdapter(
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                decoration: BoxDecoration(
+                  color: context.surfaceColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 transform: Matrix4.translationValues(0, -20, 0),
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
@@ -91,10 +70,10 @@ class _ProductScreenState extends State<ProductScreen> {
                         Expanded(
                           child: Text(
                             product.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: AppTheme.textDark,
+                              color: context.textPrimary,
                             ),
                           ),
                         ),
@@ -102,7 +81,7 @@ class _ProductScreenState extends State<ProductScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(30),
                           ),
                           child: Text(
@@ -110,7 +89,7 @@ class _ProductScreenState extends State<ProductScreen> {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryBlue,
+                              color: AppTheme.primaryGreen,
                             ),
                           ),
                         ),
@@ -119,8 +98,8 @@ class _ProductScreenState extends State<ProductScreen> {
                     const SizedBox(height: 6),
                     Text(
                       'SKU: ${product.id}  ·  Unit: ${product.unit}',
-                      style: const TextStyle(
-                          color: AppTheme.textMuted, fontSize: 13),
+                      style: TextStyle(
+                          color: context.textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -149,16 +128,15 @@ class _ProductScreenState extends State<ProductScreen> {
                       'Description',
                       style: TextStyle(
                           fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.textDark),
+                          fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Good quality ${product.name.toLowerCase()} sourced from trusted suppliers. '
                       'Sold per ${product.unit}, ideal for daily household and retail needs.',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13.5,
-                        color: AppTheme.textMuted,
+                        color: context.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -168,8 +146,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         'Quantity',
                         style: TextStyle(
                             fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textDark),
+                            fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 10),
                       Row(
@@ -218,12 +195,31 @@ class _ProductScreenState extends State<ProductScreen> {
             icon: Icons.shopping_cart_checkout_rounded,
             onPressed: inStock
                 ? () {
-                    for (var i = 0; i < _quantity; i++) {
-                      CartStore.add(product);
+                    final qtyInCart = CartStore.quantityFor(product);
+                    final remaining = product.stock - qtyInCart;
+                    final toAdd = _quantity > remaining ? remaining : _quantity;
+                    var added = 0;
+                    for (var i = 0; i < toAdd; i++) {
+                      if (CartStore.add(product)) added++;
                     }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${product.name} added to cart')),
-                    );
+                    final messenger = ScaffoldMessenger.of(context);
+                    if (added > 0) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            toAdd < _quantity
+                                ? 'Only $remaining left in stock. $added added to cart.'
+                                : '${product.name} added to cart',
+                          ),
+                        ),
+                      );
+                    } else {
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Stock limit reached for this product.'),
+                        ),
+                      );
+                    }
                     Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const CartScreen()),
                     );
@@ -243,7 +239,7 @@ class _ProductScreenState extends State<ProductScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 12),
       child: Material(
-        color: Colors.white,
+        color: context.surfaceColor,
         shape: const CircleBorder(),
         elevation: 1,
         child: InkWell(
@@ -251,7 +247,7 @@ class _ProductScreenState extends State<ProductScreen> {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Icon(icon, size: 20, color: iconColor ?? AppTheme.textDark),
+            child: Icon(icon, size: 20, color: iconColor ?? context.textPrimary),
           ),
         ),
       ),
@@ -267,23 +263,23 @@ class _ProductScreenState extends State<ProductScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.backgroundLight,
+        color: context.surfaceAlt,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: AppTheme.primaryBlue),
+          Icon(icon, size: 18, color: AppTheme.primaryGreen),
           const SizedBox(height: 8),
           Text(label,
-              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+              style: TextStyle(fontSize: 11, color: context.textSecondary)),
           const SizedBox(height: 2),
           Text(
             value,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: valueColor ?? AppTheme.textDark,
+              color: valueColor ?? context.textPrimary,
             ),
           ),
         ],
@@ -293,14 +289,14 @@ class _ProductScreenState extends State<ProductScreen> {
 
   Widget _quantityButton({required IconData icon, required VoidCallback onTap}) {
     return Material(
-      color: AppTheme.backgroundLight,
+      color: context.surfaceAlt,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(12),
-          child: Icon(icon, size: 18, color: AppTheme.primaryBlue),
+          child: Icon(icon, size: 18, color: AppTheme.primaryGreen),
         ),
       ),
     );

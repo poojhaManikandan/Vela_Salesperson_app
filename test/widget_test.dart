@@ -8,7 +8,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    // Verify Velan app loads
-    expect(find.textContaining('Velan'), findsWidgets);
+    // Verify Vela app loads
+    expect(find.textContaining('Vela'), findsWidgets);
   });
 }

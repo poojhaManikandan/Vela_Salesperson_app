@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../data/bill_store.dart';
 import '../models/bill.dart';
+import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_search_field.dart';
 import '../widgets/misc_widgets.dart';
 import '../widgets/bill_receipt_sheet.dart';
+import '../services/backend_service.dart';
 
 class BillHistoryScreen extends StatefulWidget {
   final bool embedded;
@@ -64,16 +67,13 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bills History Database')),
+      appBar: AppBar(title: Text('Bills History Database'.tr)),
       body: SafeArea(child: body),
     );
   }
 
   Widget _buildBody(BuildContext context) {
     final bills = _filteredBills;
-    final todaySales = BillStore.todaySales;
-    final todayCount = BillStore.todayBillCount;
-    final avgAmount = BillStore.averageBillAmount;
 
     return Column(
       children: [
@@ -84,18 +84,11 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
             children: [
               if (widget.embedded) ...[
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    const Text(
-                      'Bill History & Analytics',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppTheme.textDark,
-                      ),
-                    ),
                     IconButton(
                       icon: const Icon(Icons.refresh_rounded),
+                      tooltip: 'Refresh bills',
                       onPressed: () async {
                         await BillStore.load();
                         setState(() {});
@@ -103,60 +96,9 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 4),
               ],
 
-              // Sales Summary Header
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppTheme.primaryBlue,
-                      AppTheme.primaryBlue.withValues(alpha: 0.85),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 3),
-                    )
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _statItem(
-                        'Today Sales',
-                        '₹${todaySales.toStringAsFixed(0)}',
-                        Icons.payments_outlined,
-                      ),
-                    ),
-                    Container(height: 36, width: 1, color: Colors.white24),
-                    Expanded(
-                      child: _statItem(
-                        'Bills Generated',
-                        '$todayCount',
-                        Icons.receipt_outlined,
-                      ),
-                    ),
-                    Container(height: 36, width: 1, color: Colors.white24),
-                    Expanded(
-                      child: _statItem(
-                        'Avg Order',
-                        '₹${avgAmount.toStringAsFixed(0)}',
-                        Icons.analytics_outlined,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 12),
               AppSearchField(
                 hintText: 'Search by bill #, customer, shop, employee...',
                 onChanged: (v) => setState(() => _query = v),
@@ -177,9 +119,9 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                         label: Text(f),
                         selected: selected,
                         showCheckmark: false,
-                        selectedColor: AppTheme.primaryBlue,
+                        selectedColor: AppTheme.primaryGreen,
                         labelStyle: TextStyle(
-                          color: selected ? Colors.white : AppTheme.textDark,
+                          color: selected ? Colors.white : context.textPrimary,
                           fontWeight: FontWeight.w600,
                           fontSize: 12,
                         ),
@@ -219,12 +161,12 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                   width: 42,
                                   height: 42,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryBlue
+                                    color: AppTheme.primaryGreen
                                         .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(Icons.receipt_long_rounded,
-                                      color: AppTheme.primaryBlue, size: 20),
+                                      color: AppTheme.primaryGreen, size: 20),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -249,7 +191,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: AppTheme.primaryBlue
+                                              color: AppTheme.primaryGreen
                                                   .withValues(alpha: 0.08),
                                               borderRadius:
                                                   BorderRadius.circular(6),
@@ -259,7 +201,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                               style: const TextStyle(
                                                 fontSize: 10,
                                                 fontWeight: FontWeight.w700,
-                                                color: AppTheme.primaryBlue,
+                                                color: AppTheme.primaryGreen,
                                               ),
                                             ),
                                           ),
@@ -270,17 +212,17 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                         'Customer: ${bill.customerName} · By ${bill.employeeName}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontSize: 12,
-                                            color: AppTheme.textMuted),
+                                            color: context.textSecondary),
                                       ),
                                       Text(
                                         '${_formatDate(bill.date)} · ${bill.shopName}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                             fontSize: 11,
-                                            color: AppTheme.textMuted),
+                                            color: context.textSecondary),
                                       ),
                                     ],
                                   ),
@@ -291,7 +233,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     StatusPill(status: bill.status),
-                                    if (bill.status == 'Paid') ...[
+                                    if (bill.status.toUpperCase() == 'PENDING' || bill.status == 'Paid') ...[
                                       const SizedBox(width: 2),
                                       SizedBox(
                                         width: 28,
@@ -320,42 +262,120 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 status: 'Refunded',
                                                 notes: 'Refunded by operator',
                                               );
-                                              await BillStore.save(updatedBill);
-                                              setState(() {});
-                                              if (context.mounted) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    backgroundColor:
-                                                        AppTheme.dangerRed,
-                                                    content: Text(
-                                                        'Bill ${bill.billNumber} has been refunded/voided.'),
-                                                  ),
-                                                );
+                                              // Send update to backend
+                                              final success = await BackendService.updateBillStatus(
+                                                bill.billNumber, 
+                                                'Refunded',
+                                              );
+                                              if (success) {
+                                                await BillStore.save(updatedBill);
+                                                setState(() {});
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor: AppTheme.dangerRed,
+                                                      content: Text('Bill ${bill.billNumber} has been refunded/voided.'),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      backgroundColor: AppTheme.dangerRed,
+                                                      content: Text('Failed to update bill status on server. Please ensure the bill exists.'),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            }
+                                            if (action == 'paid') {
+                                              final updatedBill = Bill(
+                                                billNumber: bill.billNumber,
+                                                date: bill.date,
+                                                employeeName: bill.employeeName,
+                                                customerName: bill.customerName,
+                                                customerPhone: bill.customerPhone,
+                                                shopName: bill.shopName,
+                                                paymentMode: bill.paymentMode,
+                                                items: bill.items,
+                                                subtotal: bill.subtotal,
+                                                tax: bill.tax,
+                                                discount: bill.discount,
+                                                total: bill.total,
+                                                amountPaid: bill.total,
+                                                status: 'Paid',
+                                                notes: bill.notes,
+                                              );
+                                              // Send update to backend
+                                              final success = await BackendService.updateBillStatus(
+                                                bill.billNumber, 
+                                                'Paid', 
+                                                amountPaid: bill.total
+                                              );
+                                              
+                                              if (success) {
+                                                // Save locally too
+                                                await BillStore.save(updatedBill);
+                                                setState(() {});
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor: AppTheme.primaryGreen,
+                                                      content: Text('Bill ${bill.billNumber} marked as Paid.'),
+                                                    ),
+                                                  );
+                                                }
+                                              } else {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      backgroundColor: AppTheme.dangerRed,
+                                                      content: Text('Failed to update bill status on server.'),
+                                                    ),
+                                                  );
+                                                }
                                               }
                                             }
                                           },
                                           itemBuilder: (context) => [
-                                            const PopupMenuItem(
-                                              value: 'refund',
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                      Icons
-                                                          .assignment_return_outlined,
-                                                      size: 18,
-                                                      color: AppTheme.dangerRed),
-                                                  SizedBox(width: 8),
-                                                  Text('Void / Refund Bill',
-                                                      style: TextStyle(
-                                                          color:
-                                                              AppTheme.dangerRed,
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.w600)),
-                                                ],
+                                            if (bill.status.toUpperCase() == 'PENDING')
+                                              PopupMenuItem(
+                                                value: 'paid',
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.check_circle_outline,
+                                                        size: 18, color: AppTheme.primaryGreen),
+                                                    const SizedBox(width: 8),
+                                                    Text('Mark as Paid'.tr,
+                                                        style: const TextStyle(
+                                                            color: AppTheme.primaryGreen,
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w600)),
+                                                  ],
+                                                ),
                                               ),
-                                            ),
+                                            if (bill.status.toUpperCase() == 'PENDING' || bill.status == 'Paid')
+                                              PopupMenuItem(
+                                                value: 'refund',
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                        Icons
+                                                            .assignment_return_outlined,
+                                                        size: 18,
+                                                        color: AppTheme.dangerRed),
+                                                    const SizedBox(width: 8),
+                                                    Text('Void / Refund Bill'.tr,
+                                                        style: const TextStyle(
+                                                            color:
+                                                                AppTheme.dangerRed,
+                                                            fontSize: 13,
+                                                            fontWeight:
+                                                                FontWeight.w600)),
+                                                  ],
+                                                ),
+                                              ),
                                           ],
                                         ),
                                       ),
@@ -373,8 +393,8 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                     '${bill.items.length} items (${bill.items.fold(0, (s, i) => s + i.quantity)} units)',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                        fontSize: 12, color: AppTheme.textMuted),
+                                    style: TextStyle(
+                                        fontSize: 12, color: context.textSecondary),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -383,7 +403,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w900,
                                       fontSize: 16,
-                                      color: AppTheme.primaryBlue),
+                                      color: AppTheme.primaryGreen),
                                 ),
                               ],
                             ),
@@ -403,7 +423,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                     },
                                     icon: const Icon(Icons.visibility_outlined,
                                         size: 16),
-                                    label: const Text('View'),
+                                    label: Text('View'.tr),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -411,7 +431,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                   child: FilledButton.icon(
                                     style: FilledButton.styleFrom(
                                       minimumSize: const Size.fromHeight(40),
-                                      backgroundColor: AppTheme.primaryBlue,
+                                      backgroundColor: AppTheme.primaryGreen,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
@@ -421,7 +441,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                     },
                                     icon: const Icon(Icons.print_outlined,
                                         size: 16),
-                                    label: const Text('Reprint'),
+                                    label: Text('Reprint'.tr),
                                   ),
                                 ),
                               ],
@@ -437,30 +457,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
     );
   }
 
-  Widget _statItem(String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white70, size: 18),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   String _formatDate(DateTime date) {
     const months = [

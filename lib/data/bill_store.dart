@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/bill.dart';
 import '../services/backend_service.dart';
-import 'dummy_data.dart';
 
 class BillStore {
   BillStore._();
@@ -19,13 +18,8 @@ class BillStore {
       final decoded = jsonDecode(raw) as List<dynamic>;
       bills
         ..clear()
-        ..addAll(decoded.map((item) => Bill.fromJson(item as Map<String, dynamic>)));
-    } else {
-      // Seed with initial dummy bills on first run
-      bills
-        ..clear()
-        ..addAll(DummyData.bills);
-      await _persist();
+        ..addAll(
+            decoded.map((item) => Bill.fromJson(item as Map<String, dynamic>)));
     }
     _loaded = true;
   }
@@ -85,11 +79,19 @@ class BillStore {
     await BackendService.saveBillToBackend(bill);
   }
 
+  static Map<String, dynamic> _toStorageJson(Bill bill) {
+    final json = bill.toJson();
+    json['status'] = bill.status;
+    json['amount_paid'] = bill.amountPaid;
+    json['notes'] = bill.notes;
+    return json;
+  }
+
   static Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _storageKey,
-      jsonEncode(bills.map((bill) => bill.toJson()).toList()),
+      jsonEncode(bills.map(_toStorageJson).toList()),
     );
   }
 
@@ -97,12 +99,14 @@ class BillStore {
     final year = DateTime.now().year;
     int maxNum = 1000;
     for (final bill in bills) {
+      // Bill numbers look like INV-2026-0001 or INV-2026-0001-GST.
+      // The serial is always the 3rd dash-separated part; parsing every part
+      // would mistakenly treat the year (e.g. 2026) as a serial number.
       final parts = bill.billNumber.split('-');
-      for (final part in parts) {
-        final parsed = int.tryParse(part);
-        if (parsed != null && parsed >= 1000 && parsed > maxNum) {
-          maxNum = parsed;
-        }
+      if (parts.length < 3) continue;
+      final serial = int.tryParse(parts[2]);
+      if (serial != null && serial > maxNum) {
+        maxNum = serial;
       }
     }
     final nextNum = maxNum + 1;
@@ -111,31 +115,34 @@ class BillStore {
 
   static double get todaySales {
     final today = DateTime.now();
-    return bills.where((b) =>
-      b.date.year == today.year &&
-      b.date.month == today.month &&
-      b.date.day == today.day &&
-      b.status == 'Paid'
-    ).fold(0.0, (sum, b) => sum + b.total);
+    return bills
+        .where((b) =>
+            b.date.year == today.year &&
+            b.date.month == today.month &&
+            b.date.day == today.day &&
+            b.status == 'Paid')
+        .fold(0.0, (sum, b) => sum + b.total);
   }
 
   static int get todayBillCount {
     final today = DateTime.now();
-    return bills.where((b) =>
-      b.date.year == today.year &&
-      b.date.month == today.month &&
-      b.date.day == today.day
-    ).length;
+    return bills
+        .where((b) =>
+            b.date.year == today.year &&
+            b.date.month == today.month &&
+            b.date.day == today.day)
+        .length;
   }
 
   static double get averageBillAmount {
     final today = DateTime.now();
-    final todayPaidBills = bills.where((b) =>
-      b.date.year == today.year &&
-      b.date.month == today.month &&
-      b.date.day == today.day &&
-      b.status == 'Paid'
-    ).toList();
+    final todayPaidBills = bills
+        .where((b) =>
+            b.date.year == today.year &&
+            b.date.month == today.month &&
+            b.date.day == today.day &&
+            b.status == 'Paid')
+        .toList();
     if (todayPaidBills.isEmpty) return 0.0;
     return todaySales / todayPaidBills.length;
   }

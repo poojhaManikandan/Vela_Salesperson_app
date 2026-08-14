@@ -25,22 +25,22 @@ class EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.08),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 42, color: AppTheme.primaryBlue),
+              child: Icon(icon, size: 42, color: AppTheme.primaryGreen),
             ),
             const SizedBox(height: 18),
             Text(
               title,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark),
+              style: TextStyle(
+                  fontSize: 16, fontWeight: FontWeight.w700, color: context.textPrimary),
             ),
             const SizedBox(height: 6),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+              style: TextStyle(fontSize: 13, color: context.textSecondary),
             ),
           ],
         ),
@@ -67,7 +67,7 @@ class SummaryRow extends StatelessWidget {
     final style = TextStyle(
       fontSize: isBold ? 17 : 14,
       fontWeight: isBold ? FontWeight.w800 : FontWeight.w500,
-      color: isBold ? AppTheme.textDark : AppTheme.textMuted,
+      color: isBold ? context.textPrimary : context.textSecondary,
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
@@ -78,7 +78,7 @@ class SummaryRow extends StatelessWidget {
           Text(
             value,
             style: style.copyWith(
-              color: isBold ? AppTheme.primaryBlue : AppTheme.textDark,
+              color: isBold ? AppTheme.primaryGreen : context.textPrimary,
             ),
           ),
         ],

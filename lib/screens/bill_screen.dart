@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data/bill_store.dart';
 import '../data/cart_store.dart';
-import '../data/dummy_data.dart';
 import '../models/bill.dart';
+import '../services/printer_service.dart';
+import '../services/translation_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
 import 'home_screen.dart';
@@ -30,7 +31,7 @@ class BillScreen extends StatefulWidget {
     this.customerPhone = '',
     this.shopName = 'Velan Main Store',
     this.paymentMode = 'Cash',
-    this.employeeName = 'Ramalingam',
+    this.employeeName = 'Cashier',
     this.existingBill,
   });
 
@@ -41,18 +42,10 @@ class BillScreen extends StatefulWidget {
 class _BillScreenState extends State<BillScreen> {
   late Bill _bill;
   bool _isPrinting = false;
-  late PrinterDevice _selectedPrinter;
 
   @override
   void initState() {
     super.initState();
-    _selectedPrinter = DummyData.printers.isNotEmpty
-        ? DummyData.printers.first
-        : const PrinterDevice(
-            id: 'PR01',
-            name: 'Standard Thermal Printer',
-            type: 'Bluetooth',
-          );
     if (widget.existingBill != null) {
       _bill = widget.existingBill!;
     } else {
@@ -83,9 +76,41 @@ class _BillScreenState extends State<BillScreen> {
     CartStore.clear();
   }
 
+  String get _printerLabel {
+    final service = PrinterService.instance;
+    if (!service.isSupported) return 'Bluetooth printer (Android/iOS)';
+    return service.connected?.name ?? 'No printer connected';
+  }
+
   void _printReceipt() async {
+    final service = PrinterService.instance;
+
+    if (!service.isSupported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Bluetooth printing requires a physical Android/iOS device. '
+            'Your receipt is shown on screen.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!service.isConnected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No printer connected. Tap the printer icon to scan & connect.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final printerName = service.connected!.name;
     setState(() => _isPrinting = true);
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -102,13 +127,13 @@ class _BillScreenState extends State<BillScreen> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.print_rounded,
                     size: 40,
-                    color: AppTheme.primaryBlue,
+                    color: AppTheme.primaryGreen,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -118,16 +143,16 @@ class _BillScreenState extends State<BillScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sending data to ${_selectedPrinter.name}...',
+                  'Sending data to $printerName...',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                  style: TextStyle(fontSize: 12, color: context.textSecondary),
                 ),
                 const SizedBox(height: 24),
-                const SizedBox(
+                SizedBox(
                   width: 140,
                   child: LinearProgressIndicator(
-                    backgroundColor: AppTheme.backgroundLight,
-                    color: AppTheme.primaryBlue,
+                    backgroundColor: context.surfaceAlt,
+                    color: AppTheme.primaryGreen,
                     minHeight: 4,
                   ),
                 ),
@@ -139,8 +164,21 @@ class _BillScreenState extends State<BillScreen> {
       },
     );
 
-    await Future.delayed(const Duration(milliseconds: 1800));
-    
+    try {
+      await service.printBill(_bill);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close Dialog
+      setState(() => _isPrinting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppTheme.dangerRed,
+          content: Text('Print failed: $e'),
+        ),
+      );
+      return;
+    }
+
     if (!mounted) return;
     Navigator.of(context).pop(); // Close Dialog
     setState(() => _isPrinting = false);
@@ -154,7 +192,7 @@ class _BillScreenState extends State<BillScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Receipt printed on ${_selectedPrinter.name} successfully!',
+                'Receipt printed on $printerName successfully!',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -168,7 +206,7 @@ class _BillScreenState extends State<BillScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tax Invoice & Receipt'),
+        title: Text('Tax Invoice & Receipt'.tr),
         actions: [
           IconButton(
             icon: const Icon(Icons.print_outlined),
@@ -177,12 +215,7 @@ class _BillScreenState extends State<BillScreen> {
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const PrinterScreen()),
               );
-              setState(() {
-                _selectedPrinter = DummyData.printers.firstWhere(
-                  (p) => p.isConnected,
-                  orElse: () => DummyData.printers.first,
-                );
-              });
+              setState(() {});
             },
           ),
         ],
@@ -433,7 +466,7 @@ class _BillScreenState extends State<BillScreen> {
                               style: const TextStyle(
                                 fontSize: 19,
                                 fontWeight: FontWeight.w900,
-                                color: AppTheme.primaryBlue,
+                                color: AppTheme.primaryGreen,
                               ),
                             ),
                           ],
@@ -501,7 +534,7 @@ class _BillScreenState extends State<BillScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.surfaceColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.08),
@@ -517,11 +550,11 @@ class _BillScreenState extends State<BillScreen> {
                   Row(
                     children: [
                       const Icon(Icons.print_rounded,
-                          size: 18, color: AppTheme.primaryBlue),
+                          size: 18, color: AppTheme.primaryGreen),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Printer: ${_selectedPrinter.name} (${_selectedPrinter.type})',
+                          'Printer: $_printerLabel',
                           style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
@@ -535,12 +568,14 @@ class _BillScreenState extends State<BillScreen> {
                           color: AppTheme.successGreen.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          'Ready',
+                        child: Text(
+                          PrinterService.instance.isConnected ? 'Ready' : 'Off',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: AppTheme.successGreen,
+                            color: PrinterService.instance.isConnected
+                                ? AppTheme.successGreen
+                                : context.textSecondary,
                           ),
                         ),
                       ),
@@ -600,7 +635,7 @@ class _BillScreenState extends State<BillScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -608,7 +643,7 @@ class _BillScreenState extends State<BillScreen> {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryGreen,
                 ),
               ),
             )

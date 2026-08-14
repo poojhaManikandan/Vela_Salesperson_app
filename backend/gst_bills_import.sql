@@ -1,59 +1,49 @@
 -- ==========================================
--- Table Definitions & Imports for GST Billing Database
+-- SQL Import Script for GST Bills
+-- Target Table: salesperson_bills
 -- ==========================================
 
-CREATE TABLE IF NOT EXISTS erp_billing_system (
-    bill_id UUID PRIMARY KEY,
-    business_name VARCHAR(255) NOT NULL,
-    bill_no VARCHAR(50) NOT NULL,
-    payment_mode VARCHAR(50) DEFAULT 'CASH',
-    total_items INT NOT NULL,
-    total_quantity NUMERIC(10, 2) NOT NULL,
-    grand_total NUMERIC(10, 2) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS erp_billing_system_company_items (
-    item_id UUID PRIMARY KEY,
-    invoice_id UUID REFERENCES erp_billing_system(bill_id) ON DELETE CASCADE,
-    sno INT NOT NULL,
-    description VARCHAR(255) NOT NULL,
-    unit VARCHAR(50) DEFAULT 'Pieces',
-    quantity NUMERIC(10, 2) NOT NULL,
-    rate NUMERIC(10, 2) NOT NULL,
-    amount NUMERIC(10, 2) NOT NULL
+CREATE TABLE IF NOT EXISTS salesperson_bills (
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    submitted_by   TEXT,
+    customer_id    UUID,
+    customer_name  VARCHAR(255) NOT NULL,
+    customer_phone VARCHAR(20),
+    payment_type   VARCHAR(20) NOT NULL DEFAULT 'CASH',
+    sales_type     VARCHAR(20) NOT NULL DEFAULT 'RETAIL',
+    price_list     VARCHAR(100),
+    items          JSONB NOT NULL DEFAULT '[]',
+    grand_total    NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
+    status         TEXT NOT NULL DEFAULT 'pending',
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at   TIMESTAMPTZ,
+    salesman_id    UUID
 );
 
 
 -- ==========================================
--- GST Billing Database Insert Queries
+-- GST Bills & Items Data Insert Queries
 -- ==========================================
 
--- Insert Bill: 2026AUG08A027 (INV-2026-2027-GST.json)
-INSERT INTO erp_billing_system (
-    bill_id, business_name, bill_no, payment_mode, 
-    total_items, total_quantity, grand_total, created_at
+-- Insert Bill: INV-2026-1001-GST.json
+INSERT INTO salesperson_bills (
+    id, submitted_by, customer_id, customer_name, customer_phone, payment_type,
+    sales_type, price_list, items, grand_total, status, created_at, updated_at,
+    processed_at, salesman_id
 ) VALUES (
-    'f6480fac-166e-443e-b039-7cac2dbff336', 'VELA AGENCY MAIN STORE', '2026AUG08A027', 'CASH', 
-    2, 2.00, 638.40, '2026-08-08 17:50:12.166249+00'
-) ON CONFLICT (bill_id) DO NOTHING;
-INSERT INTO erp_billing_system_company_items (
-    item_id, invoice_id, sno, description, unit, quantity, rate, amount
-) VALUES 
-('e475241c-2352-45ce-b146-638c34853064', 'f6480fac-166e-443e-b039-7cac2dbff336', 1, 'Basmati Rice 5kg', 'bag', 1.00, 540.00, 540.00),
-('0d6207f6-164d-4def-a4bc-6c1ee7efd8f5', 'f6480fac-166e-443e-b039-7cac2dbff336', 2, 'Full Cream Milk 1L', 'pouch', 1.00, 68.00, 68.00)
-ON CONFLICT (item_id) DO NOTHING;
+    'a4b45b16-2c27-43e2-bfe4-97a3ac91f6c3', '', NULL, 'Walk-in Customer', '', 'CASH',
+    'Retail', '', '[{"product_id": "P001", "product_name": "Surf Excel 1kg", "quantity": 2.0, "unit_price": 125.0, "discount": 0.0, "total": 250.0}]'::jsonb, 262.50, 'pending',
+    '2026-08-11T15:07:00.270263+05:30', '2026-08-11T15:07:00.270263+05:30', NULL, NULL
+) ON CONFLICT (id) DO NOTHING;
 
--- Insert Bill: 2026AUG08A028 (INV-2026-2028-GST.json)
-INSERT INTO erp_billing_system (
-    bill_id, business_name, bill_no, payment_mode, 
-    total_items, total_quantity, grand_total, created_at
+-- Insert Bill: INV-2026-2028-GST.json
+INSERT INTO salesperson_bills (
+    id, submitted_by, customer_id, customer_name, customer_phone, payment_type,
+    sales_type, price_list, items, grand_total, status, created_at, updated_at,
+    processed_at, salesman_id
 ) VALUES (
-    '92cc3dc7-5da2-4e9f-bdc0-8a942a6cc163', 'VELA AGENCY MAIN STORE', '2026AUG08A028', 'CASH', 
-    1, 1.00, 71.40, '2026-08-08 18:35:03.982674+00'
-) ON CONFLICT (bill_id) DO NOTHING;
-INSERT INTO erp_billing_system_company_items (
-    item_id, invoice_id, sno, description, unit, quantity, rate, amount
-) VALUES 
-('377951dc-81da-428f-b890-560c5f0e8c65', '92cc3dc7-5da2-4e9f-bdc0-8a942a6cc163', 1, 'Full Cream Milk 1L', 'pouch', 1.00, 68.00, 68.00)
-ON CONFLICT (item_id) DO NOTHING;
+    '8bdacd52-3353-4d8e-868b-4a58710191c7', '', NULL, 'Walk-in Customer', '', 'CASH',
+    'Retail', '', '[{"product_id": "P001", "product_name": "Laundry Detergent 1kg", "quantity": 1.0, "unit_price": 195.0, "discount": 0.0, "total": 195.0}, {"product_id": "P002", "product_name": "Dish Wash Liquid", "quantity": 1.0, "unit_price": 110.0, "discount": 0.0, "total": 110.0}]'::jsonb, 320.25, 'pending',
+    '2026-08-11T15:07:00.576748+05:30', '2026-08-11T15:07:00.576748+05:30', NULL, NULL
+) ON CONFLICT (id) DO NOTHING;

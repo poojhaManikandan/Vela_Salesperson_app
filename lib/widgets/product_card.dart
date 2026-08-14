@@ -9,7 +9,6 @@ class ProductCard extends StatelessWidget {
   final bool isCompactList;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
-  final VoidCallback? onToggleWishlist;
 
   const ProductCard({
     super.key,
@@ -17,17 +16,15 @@ class ProductCard extends StatelessWidget {
     this.isCompactList = false,
     this.onTap,
     this.onAddToCart,
-    this.onToggleWishlist,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool outOfStock = product.stock == 0;
     final int qtyInCart = CartStore.quantityFor(product);
-    final bool isFav = CartStore.isWishlisted(product.id);
 
     if (isCompactList) {
-      return _buildCompactList(context, outOfStock, qtyInCart, isFav);
+      return _buildCompactList(context, outOfStock, qtyInCart);
     }
 
     return Card(
@@ -43,38 +40,9 @@ class ProductCard extends StatelessWidget {
                 child: Stack(
                   children: [
                     Positioned.fill(
-                      child: Image.network(
-                        product.imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: AppTheme.backgroundLight,
-                          child: const Icon(Icons.inventory_2_outlined,
-                              size: 36, color: AppTheme.textMuted),
-                        ),
-                      ),
+                      child: _productImage(context, iconSize: 36),
                     ),
-                    // Wishlist Toggle Heart Button
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Material(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: onToggleWishlist,
-                          child: Padding(
-                            padding: const EdgeInsets.all(6),
-                            child: Icon(
-                              isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                              size: 16,
-                              color: isFav ? AppTheme.dangerRed : AppTheme.textDark,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+
                     if (outOfStock)
                       Positioned(
                         top: 8,
@@ -103,7 +71,7 @@ class ProductCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue,
+                            color: AppTheme.primaryGreen,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: const [
                               BoxShadow(
@@ -130,7 +98,7 @@ class ProductCard extends StatelessWidget {
                             horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
                           color: product.isGst
-                              ? AppTheme.primaryBlue.withValues(alpha: 0.85)
+                              ? AppTheme.primaryGreen.withValues(alpha: 0.85)
                               : Colors.orange.shade800,
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -161,8 +129,8 @@ class ProductCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       product.category,
-                      style: const TextStyle(
-                          fontSize: 11, color: AppTheme.textMuted),
+                      style: TextStyle(
+                          fontSize: 11, color: context.textSecondary),
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -174,21 +142,21 @@ class ProductCard extends StatelessWidget {
                             Text(
                               '₹${product.price.toStringAsFixed(2)}',
                               style: const TextStyle(
-                                color: AppTheme.primaryBlue,
+                                color: AppTheme.primaryGreen,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 14.5,
                               ),
                             ),
                             Text(
                               '/${product.unit}',
-                              style: const TextStyle(
-                                  color: AppTheme.textMuted, fontSize: 10.5),
+                              style: TextStyle(
+                                  color: context.textSecondary, fontSize: 10.5),
                             ),
                           ],
                         ),
                         if (!outOfStock && onAddToCart != null)
                           Material(
-                            color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(8),
@@ -198,7 +166,7 @@ class ProductCard extends StatelessWidget {
                                 child: Icon(
                                   Icons.add_rounded,
                                   size: 20,
-                                  color: AppTheme.primaryBlue,
+                                  color: AppTheme.primaryGreen,
                                 ),
                               ),
                             ),
@@ -215,7 +183,27 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCompactList(BuildContext context, bool outOfStock, int qtyInCart, bool isFav) {
+  Widget _productImage(BuildContext context,
+      {required double iconSize, double? size}) {
+    final url = product.imageUrl.trim();
+    final fallback = Container(
+      width: size,
+      height: size,
+      color: context.surfaceAlt,
+      child: Icon(Icons.inventory_2_outlined,
+          size: iconSize, color: context.textSecondary),
+    );
+    if (url.isEmpty) return fallback;
+    return Image.network(
+      url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => fallback,
+    );
+  }
+
+  Widget _buildCompactList(BuildContext context, bool outOfStock, int qtyInCart) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
@@ -223,18 +211,7 @@ class ProductCard extends StatelessWidget {
         onTap: outOfStock ? null : onTap,
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            product.imageUrl,
-            width: 44,
-            height: 44,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              width: 44,
-              height: 44,
-              color: AppTheme.backgroundLight,
-              child: const Icon(Icons.inventory_2_outlined, size: 20, color: AppTheme.textMuted),
-            ),
-          ),
+          child: _productImage(context, iconSize: 20, size: 44),
         ),
         title: Row(
           children: [
@@ -249,7 +226,7 @@ class ProductCard extends StatelessWidget {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue,
+                  color: AppTheme.primaryGreen,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -267,29 +244,22 @@ class ProductCard extends StatelessWidget {
             fontSize: 11,
             color: outOfStock
                 ? AppTheme.dangerRed
-                : (product.stock < 5 ? AppTheme.accentOrange : AppTheme.textMuted),
+                : (product.stock < 5 ? AppTheme.accentOrange : context.textSecondary),
             fontWeight: (outOfStock || product.stock < 5) ? FontWeight.w700 : FontWeight.normal,
           ),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: Icon(
-                isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                size: 20,
-                color: isFav ? AppTheme.dangerRed : AppTheme.textMuted,
-              ),
-              onPressed: onToggleWishlist,
-            ),
+
             Text(
               '₹${product.price.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: AppTheme.textDark),
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: context.textPrimary),
             ),
             const SizedBox(width: 8),
             if (!outOfStock && onAddToCart != null)
               Material(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.12),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
@@ -299,7 +269,7 @@ class ProductCard extends StatelessWidget {
                     child: Icon(
                       Icons.add_rounded,
                       size: 20,
-                      color: AppTheme.primaryBlue,
+                      color: AppTheme.primaryGreen,
                     ),
                   ),
                 ),
