@@ -45,18 +45,23 @@ class Product {
 class CartItem {
   final Product product;
   int quantity;
+  double? customPrice;
 
-  CartItem({required this.product, this.quantity = 1});
+  CartItem({required this.product, this.quantity = 1, this.customPrice});
 
-  double get total => product.price * quantity;
+  double get unitPrice => customPrice ?? product.price;
+
+  double get total => unitPrice * quantity;
 
   Map<String, dynamic> toJson() => {
         'product': product.toJson(),
         'quantity': quantity,
+        'customPrice': customPrice,
       };
 
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
         product: Product.fromJson(json['product'] as Map<String, dynamic>),
         quantity: json['quantity'] as int,
+        customPrice: json['customPrice'] != null ? (json['customPrice'] as num).toDouble() : null,
       );
 }

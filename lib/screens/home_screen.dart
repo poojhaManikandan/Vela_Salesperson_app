@@ -750,6 +750,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return ProductCard(
                       product: product,
                       isCompactList: true,
+                      onProductUpdated: _loadProducts,
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute(
@@ -798,6 +799,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return ProductCard(
                           product: product,
                           isCompactList: false,
+                          onProductUpdated: _loadProducts,
                           onTap: () async {
                             await Navigator.of(context).push(
                               MaterialPageRoute(

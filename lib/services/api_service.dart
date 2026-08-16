@@ -59,4 +59,17 @@ class ApiService {
             (item) => item.map((key, value) => MapEntry(key, value.toString())))
         .toList();
   }
+
+  static Future<void> updateProductPrice(String productId, double newPrice) async {
+    final uri = Uri.parse('$baseUrl/api/products/$productId');
+    final response = await http.patch(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'price': newPrice}),
+    ).timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update product price (HTTP ${response.statusCode})');
+    }
+  }
 }

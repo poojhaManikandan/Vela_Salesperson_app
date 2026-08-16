@@ -321,6 +321,21 @@ def health_check():
         'timestamp': datetime.now().isoformat()
     }), 200
 
+@app.route('/api/products/<product_id>', methods=['PATCH'])
+def update_product(product_id):
+    """Updates the price of a product in Supabase."""
+    data = request.json or {}
+    new_price = data.get('price')
+    if new_price is None:
+        return jsonify({'error': 'price is required'}), 400
+        
+    from supabase_service import update_product_price
+    success, err = update_product_price(product_id, new_price)
+    if success:
+        return jsonify({'success': True})
+    return jsonify({'error': err}), 500
+
+
 
 @app.route('/api/bills', methods=['POST'])
 def save_bill():

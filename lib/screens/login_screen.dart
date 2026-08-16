@@ -25,8 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Only this number is allowed to log in
-  static const String _allowedNumber = '9344486055';
 
   void _handleLogin() {
     if (!(_formKey.currentState?.validate() ?? true)) {
@@ -145,9 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             }
                             if (digits.length != 10) {
                               return 'Mobile number must be 10 digits';
-                            }
-                            if (digits != _allowedNumber) {
-                              return 'Access denied. Unauthorized number.';
                             }
                             return null;
                           },

@@ -337,10 +337,44 @@ class _CartScreenState extends State<CartScreen> {
                                         fontSize: 14),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    '₹${items[index].product.price.toStringAsFixed(2)} / ${items[index].product.unit} · Stock: ${items[index].product.stock}',
-                                    style: TextStyle(
-                                        fontSize: 12, color: context.textSecondary),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '₹${items[index].unitPrice.toStringAsFixed(2)} / ${items[index].product.unit} · Stock: ${items[index].product.stock}',
+                                        style: TextStyle(
+                                            fontSize: 12, color: context.textSecondary),
+                                      ),
+                                      if (CartStore.activeEmployee == '9344486055')
+                                        InkWell(
+                                          onTap: () async {
+                                            final ctrl = TextEditingController(text: items[index].unitPrice.toString());
+                                            final newPrice = await showDialog<double>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text('Edit Amount'),
+                                                content: TextField(
+                                                  controller: ctrl,
+                                                  keyboardType: TextInputType.number,
+                                                  decoration: const InputDecoration(labelText: 'New Amount'),
+                                                ),
+                                                actions: [
+                                                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                                  TextButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text)), child: const Text('Save')),
+                                                ],
+                                              ),
+                                            );
+                                            if (newPrice != null && mounted) {
+                                              setState(() {
+                                                items[index].customPrice = newPrice;
+                                              });
+                                            }
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.only(left: 8.0),
+                                            child: Icon(Icons.edit, size: 14, color: AppTheme.primaryGreen),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   Row(

@@ -458,3 +458,32 @@ def fetch_products():
         err_msg = str(e)
         print(f"[SUPABASE EXCEPTION] Failed to fetch products: {err_msg}")
         return [], err_msg
+
+def update_product_price(product_id, new_price):
+    if not is_supabase_configured():
+        return False, "Supabase credentials not configured in backend/.env"
+        
+    endpoint = f"{SUPABASE_URL}/rest/v1/products"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
+    }
+    params = {
+        "product_id": f"eq.{product_id}"
+    }
+    
+    try:
+        response = requests.patch(
+            endpoint, 
+            headers=headers, 
+            params=params, 
+            json={"selling_price": new_price},
+            timeout=10
+        )
+        if response.status_code in (200, 204):
+            return True, None
+        return False, f"HTTP {response.status_code}: {response.text}"
+    except Exception as e:
+        return False, str(e)

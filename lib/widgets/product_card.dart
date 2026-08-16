@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/cart_store.dart';
 import '../models/product.dart';
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 
 /// Grid-style or List-style product card with quick POS billing add capabilities.
@@ -9,6 +10,7 @@ class ProductCard extends StatelessWidget {
   final bool isCompactList;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
+  final VoidCallback? onProductUpdated;
 
   const ProductCard({
     super.key,
@@ -16,6 +18,7 @@ class ProductCard extends StatelessWidget {
     this.isCompactList = false,
     this.onTap,
     this.onAddToCart,
+    this.onProductUpdated,
   });
 
   @override
@@ -139,13 +142,25 @@ class ProductCard extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '₹${product.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: AppTheme.primaryGreen,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14.5,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  '₹${product.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    color: AppTheme.primaryGreen,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 14.5,
+                                  ),
+                                ),
+                                if (CartStore.activeEmployee == '9344486055')
+                                  InkWell(
+                                    onTap: () => _editPrice(context),
+                                    child: const Padding(
+                                      padding: EdgeInsets.only(left: 4.0),
+                                      child: Icon(Icons.edit, size: 14, color: AppTheme.primaryGreen),
+                                    ),
+                                  ),
+                              ],
                             ),
                             Text(
                               '/${product.unit}',
@@ -252,9 +267,21 @@ class ProductCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
 
-            Text(
-              '₹${product.price.toStringAsFixed(2)}',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: context.textPrimary),
+            Row(
+              children: [
+                Text(
+                  '₹${product.price.toStringAsFixed(2)}',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5, color: context.textPrimary),
+                ),
+                if (CartStore.activeEmployee == '9344486055')
+                  InkWell(
+                    onTap: () => _editPrice(context),
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 4.0),
+                      child: Icon(Icons.edit, size: 14, color: AppTheme.primaryGreen),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 8),
             if (!outOfStock && onAddToCart != null)
@@ -279,4 +306,42 @@ class ProductCard extends StatelessWidget {
       ),
     );
   }
+
+  void _editPrice(BuildContext context) async {
+    final ctrl = TextEditingController(text: product.price.toString());
+    final newPrice = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Product Price'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'New Price'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, double.tryParse(ctrl.text)), child: const Text('Save')),
+        ],
+      ),
+    );
+    
+    if (newPrice != null && newPrice > 0) {
+      try {
+        await ApiService.updateProductPrice(product.id, newPrice);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Price updated successfully!'))
+          );
+        }
+        onProductUpdated?.call();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update price: $e'))
+          );
+        }
+      }
+    }
+  }
 }
+
