@@ -276,7 +276,7 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                           style: TextStyle(fontSize: 12),
                         ),
                         Text(
-                          '₹${(bill.tax / 2).toStringAsFixed(2)}',
+                          '₹${bill.cgst.toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w600),
                         ),
@@ -291,7 +291,7 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                           style: TextStyle(fontSize: 12),
                         ),
                         Text(
-                          '₹${(bill.tax / 2).toStringAsFixed(2)}',
+                          '₹${bill.sgst.toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w600),
                         ),

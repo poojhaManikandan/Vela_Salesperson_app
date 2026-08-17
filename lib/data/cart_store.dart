@@ -1,4 +1,5 @@
 import '../models/product.dart';
+import '../utils/gst_calculator.dart';
 
 class CartStore {
   CartStore._();
@@ -57,9 +58,14 @@ class CartStore {
 
   static double get subtotal => items.fold(0, (sum, item) => sum + item.total);
 
-  static double get gstSubtotal => subtotal;
+  /// CGST at 2.5% — calculated independently with ROUND_HALF_UP (matches Python reference).
+  static double get cgst => GSTCalculator.cgst(subtotal, rate: 2.5);
 
-  static double get tax => gstSubtotal * 0.05;
+  /// SGST at 2.5% — calculated independently with ROUND_HALF_UP (matches Python reference).
+  static double get sgst => GSTCalculator.sgst(subtotal, rate: 2.5);
+
+  /// Total tax = CGST + SGST (both rounded independently before summing).
+  static double get tax => cgst + sgst;
 
   static double get total =>
       (subtotal + tax - discount).clamp(0.0, double.infinity);

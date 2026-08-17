@@ -50,6 +50,8 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   double get _subtotal => CartStore.subtotal;
+  double get _cgst => CartStore.cgst;
+  double get _sgst => CartStore.sgst;
   double get _tax => CartStore.tax;
   double get _total => CartStore.total;
   double get _amountPaid => CartStore.amountPaid;
@@ -512,10 +514,10 @@ class _CartScreenState extends State<CartScreen> {
                         value: '₹${_subtotal.toStringAsFixed(2)}'),
                     SummaryRow(
                         label: 'CGST (2.5%)',
-                        value: '₹${(_tax / 2).toStringAsFixed(2)}'),
+                        value: '₹${_cgst.toStringAsFixed(2)}'),
                     SummaryRow(
                         label: 'SGST (2.5%)',
-                        value: '₹${(_tax / 2).toStringAsFixed(2)}'),
+                        value: '₹${_sgst.toStringAsFixed(2)}'),
                     const Divider(height: 16),
                     SummaryRow(
                       label: 'Grand Total',
@@ -561,7 +563,8 @@ class _CartScreenState extends State<CartScreen> {
                           paymentMode: CartStore.paymentMode,
                           items: List.from(CartStore.items),
                           subtotal: _subtotal,
-                          tax: _tax,
+                          cgst: _cgst,
+                          sgst: _sgst,
                           discount: 0,
                           total: _total,
                           amountPaid: paid,

@@ -1334,7 +1334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text('CGST (2.5%):'.tr,
                           style: TextStyle(
                               fontSize: 12.5, color: context.textSecondary)),
-                      Text('₹${(CartStore.tax / 2).toStringAsFixed(2)}',
+                      Text('₹${CartStore.cgst.toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
@@ -1346,7 +1346,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text('SGST (2.5%):'.tr,
                           style: TextStyle(
                               fontSize: 12.5, color: context.textSecondary)),
-                      Text('₹${(CartStore.tax / 2).toStringAsFixed(2)}',
+                      Text('₹${CartStore.sgst.toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600)),
                     ],
@@ -1424,7 +1424,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         paymentMode: CartStore.paymentMode,
                         items: List.from(CartStore.items),
                         subtotal: CartStore.subtotal,
-                        tax: CartStore.tax,
+                        cgst: CartStore.cgst,
+                        sgst: CartStore.sgst,
                         discount: CartStore.discount,
                         total: CartStore.total,
                         amountPaid: CartStore.amountPaid,

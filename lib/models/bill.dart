@@ -1,4 +1,5 @@
 import 'product.dart';
+import '../utils/gst_calculator.dart';
 
 class Bill {
   final String billNumber;
@@ -10,7 +11,8 @@ class Bill {
   final String paymentMode;
   final List<CartItem> items;
   final double subtotal;
-  final double tax;
+  final double cgst;
+  final double sgst;
   final double discount;
   final double total;
   final double amountPaid;
@@ -28,14 +30,20 @@ class Bill {
     this.paymentMode = 'Cash',
     required this.items,
     required this.subtotal,
-    required this.tax,
+    double? cgst,
+    double? sgst,
+    double? tax,
     this.discount = 0.0,
     required this.total,
     this.amountPaid = 0.0,
     this.status = 'Paid',
     this.notes = '',
     this.refundReason = '',
-  });
+  })  : cgst = cgst ?? (tax != null ? tax / 2 : GSTCalculator.cgst(subtotal, rate: 2.5)),
+        sgst = sgst ?? (tax != null ? tax / 2 : GSTCalculator.sgst(subtotal, rate: 2.5));
+
+  /// Total tax for backward compatibility.
+  double get tax => cgst + sgst;
 
   double get dueAmount => (total - amountPaid).clamp(0.0, double.infinity);
 
@@ -64,6 +72,11 @@ class Bill {
             .toList(),
         'grand_total': total,
         'amount_paid': amountPaid,
+        'subtotal': subtotal,
+        'cgst': cgst,
+        'sgst': sgst,
+        'tax': tax,
+        'discount': discount,
         'status': status,
         'created_at': date.toIso8601String(),
         'updated_at': date.toIso8601String(),
@@ -118,7 +131,9 @@ class Bill {
           }).toList() ??
           const [],
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-      tax: (json['tax'] as num?)?.toDouble() ?? 0.0,
+      cgst: (json['cgst'] as num?)?.toDouble(),
+      sgst: (json['sgst'] as num?)?.toDouble(),
+      tax: (json['tax'] as num?)?.toDouble(),
       discount: (json['discount'] as num?)?.toDouble() ?? 0.0,
       total: total,
       amountPaid: amountPaid,
