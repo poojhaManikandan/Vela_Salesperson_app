@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/csv_downloader.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -120,14 +121,43 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     
     final orders = (_reportData?['orders'] as List?) ?? [];
     final summary = _reportData!['summary'] as Map<String, dynamic>? ?? {};
+
+    pw.MemoryImage? logoImage;
+    try {
+      final logoData = await rootBundle.load('assets/logo.jpg');
+      logoImage = pw.MemoryImage(logoData.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('Failed to load logo: $e');
+    }
     
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         build: (context) => [
-          pw.Header(level: 0, child: pw.Text('Vela Agency - Sales Report')),
-          pw.Paragraph(text: 'Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}'),
-          pw.Paragraph(text: 'Salesperson: $_selectedSalesperson'),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('VELA AGENCY', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+                  pw.SizedBox(height: 4),
+                  pw.Text('Sales & Financial Report', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                  pw.SizedBox(height: 8),
+                  pw.Text('Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text('Salesperson Filter: $_selectedSalesperson', style: const pw.TextStyle(fontSize: 10)),
+                ],
+              ),
+              if (logoImage != null)
+                pw.Container(
+                  width: 70,
+                  height: 70,
+                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                ),
+            ],
+          ),
+          pw.Divider(thickness: 1.5, color: PdfColors.green),
           pw.SizedBox(height: 10),
           pw.Text('Summary:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.Text('Total Revenue: INR ${(summary['total_revenue'] as num?)?.toStringAsFixed(2) ?? '0.00'}'),
