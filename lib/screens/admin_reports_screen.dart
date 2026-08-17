@@ -115,15 +115,20 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final body = Column(children: [
-      _buildFilterBar(context),
-      const Divider(height: 1),
-      Expanded(child: _isLoading
-        ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
-        : _error != null ? _buildError()
-        : _reportData == null ? const SizedBox()
-        : _buildContent(context)),
-    ]);
+    final body = Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1200),
+        child: Column(children: [
+          _buildFilterBar(context),
+          const Divider(height: 1),
+          Expanded(child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryGreen))
+            : _error != null ? _buildError()
+            : _reportData == null ? const SizedBox()
+            : _buildContent(context)),
+        ]),
+      ),
+    );
     if (widget.embedded) return body;
     return Scaffold(
       appBar: AppBar(title: const Text('Sales Reports', style: TextStyle(fontWeight: FontWeight.w800))),
@@ -206,17 +211,25 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     final rev = (s['total_revenue'] as num?)?.toDouble() ?? 0.0;
     final cnt = (s['order_count'] as num?)?.toInt() ?? 0;
     final avg = (s['avg_order_value'] as num?)?.toDouble() ?? 0.0;
-    return Row(children: [
-      _card(Icons.currency_rupee_rounded, 'Total Revenue', '${String.fromCharCode(0x20B9)}${rev.toStringAsFixed(2)}', AppTheme.primaryGreen),
-      const SizedBox(width: 12),
-      _card(Icons.receipt_long_rounded, 'Total Orders', '$cnt', const Color(0xFF3B82F6)),
-      const SizedBox(width: 12),
-      _card(Icons.trending_up_rounded, 'Avg. Order', '${String.fromCharCode(0x20B9)}${avg.toStringAsFixed(2)}', const Color(0xFFF59E0B)),
-    ]);
+    
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    final cards = [
+      _card(Icons.currency_rupee_rounded, 'Total Revenue', '${String.fromCharCode(0x20B9)}${rev.toStringAsFixed(2)}', AppTheme.primaryGreen, isMobile),
+      if (isMobile) const SizedBox(height: 12) else const SizedBox(width: 12),
+      _card(Icons.receipt_long_rounded, 'Total Orders', '$cnt', const Color(0xFF3B82F6), isMobile),
+      if (isMobile) const SizedBox(height: 12) else const SizedBox(width: 12),
+      _card(Icons.trending_up_rounded, 'Avg. Order', '${String.fromCharCode(0x20B9)}${avg.toStringAsFixed(2)}', const Color(0xFFF59E0B), isMobile),
+    ];
+    
+    if (isMobile) {
+      return Column(children: cards);
+    }
+    return Row(children: cards);
   }
 
-  Widget _card(IconData icon, String label, String value, Color color) {
-    return Expanded(child: Container(
+  Widget _card(IconData icon, String label, String value, Color color, bool isMobile) {
+    final cardContent = Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14), border: Border.all(color: color.withValues(alpha: 0.25))),
       child: Row(children: [
@@ -226,10 +239,11 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
           const SizedBox(height: 3),
-          Text(value, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: color)),
+          Text(value, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: color), overflow: TextOverflow.ellipsis),
         ])),
       ]),
-    ));
+    );
+    return isMobile ? cardContent : Expanded(child: cardContent);
   }
 
   Widget _sectionTitle(String t) => Text(t, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800));
