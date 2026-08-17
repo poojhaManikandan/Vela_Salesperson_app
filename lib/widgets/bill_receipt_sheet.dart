@@ -373,6 +373,35 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                         ),
                       ],
                     ),
+                    if (bill.status == 'Refunded' && bill.refundReason.isNotEmpty) ...[
+                      const Divider(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Refund Reason:',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.dangerRed,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              bill.refundReason,
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.dangerRed,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

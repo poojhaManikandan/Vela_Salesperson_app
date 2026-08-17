@@ -140,6 +140,17 @@ class EscPosReceipt {
     text(_money(bill.total).padLeft(12));
     bold(false);
     feed(1);
+    
+    if (bill.amountPaid != bill.total) {
+      summaryRow('Amount Paid:', _money(bill.amountPaid));
+      summaryRow('Balance Due:', _money(bill.dueAmount));
+    }
+    
+    if (bill.status == 'Refunded' && bill.refundReason.isNotEmpty) {
+      line();
+      centered('VOID / REFUNDED', isBold: true);
+      left('Reason: ${bill.refundReason}');
+    }
     line();
 
     // ---------------------------------------------------------------------

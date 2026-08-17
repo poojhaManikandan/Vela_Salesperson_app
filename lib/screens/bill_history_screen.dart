@@ -297,7 +297,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 notes: reason,
                                                 refundReason: reason,
                                               );
-                                              final success = await BackendService.updateBillStatus(bill.billNumber, 'Refunded');
+                                              final success = await BackendService.updateBillStatus(bill.billNumber, 'Refunded', refundReason: reason);
                                               if (success) {
                                                 await BillStore.save(updatedBill);
                                                 setState(() {});

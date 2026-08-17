@@ -38,11 +38,14 @@ class BackendService {
   }
 
   /// Sends a PATCH request to update a bill's status (e.g. from PENDING to PAID)
-  static Future<bool> updateBillStatus(String billId, String newStatus, {double? amountPaid}) async {
+  static Future<bool> updateBillStatus(String billId, String newStatus, {double? amountPaid, String? refundReason}) async {
     try {
       final body = {'status': newStatus};
       if (amountPaid != null) {
         body['amountPaid'] = amountPaid.toString();
+      }
+      if (refundReason != null) {
+        body['refundReason'] = refundReason;
       }
       
       final response = await http.patch(

@@ -559,6 +559,11 @@ def update_bill_status(bill_id):
                     if 'amountPaid' in data:
                         bill_data['amount_paid'] = float(data['amountPaid'])
                     
+                    # Also update refund_reason & notes if provided
+                    if 'refundReason' in data:
+                        bill_data['refund_reason'] = data['refundReason']
+                        bill_data['notes'] = data['refundReason']
+                    
                     # Save locally
                     with open(filepath, 'w', encoding='utf-8') as f:
                         json.dump(bill_data, f, indent=2, ensure_ascii=False)
@@ -795,6 +800,7 @@ def get_reports():
                 'items_count': item_count,
                 'grand_total': grand_total,
                 'status': str(bill.get('status') or 'PENDING'),
+                'refund_reason': str(bill.get('refund_reason') or bill.get('refundReason') or bill.get('notes') or ''),
                 'created_at': str(created_raw),
                 'items': items,
             })

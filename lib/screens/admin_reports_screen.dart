@@ -92,14 +92,16 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
 
   void _downloadCsv() {
     final orders = (_reportData?['orders'] as List?) ?? [];
-    final rows = <String>['Bill Number,Salesperson,Customer,Phone,Payment,Items,Total (INR),Status,Date'];
+    final rows = <String>['Bill Number,Salesperson,Customer,Phone,Payment,Items,Total (INR),Status,Notes / Reason,Date'];
     for (final o in orders) {
       rows.add([
         _c(o['bill_number']), _c(o['salesperson']), _c(o['customer_name']),
         _c(o['customer_phone']), _c(o['payment_type']),
         '${o['items_count'] ?? 0}',
         '${(o['grand_total'] as num?)?.toStringAsFixed(2) ?? '0.00'}',
-        _c(o['status']), _c(o['created_at']),
+        _c(o['status']),
+        _c(o['refund_reason'] ?? ''),
+        _c(o['created_at']),
       ].join(','));
     }
     final csv = rows.join('\n');
@@ -135,7 +137,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           pw.TableHelper.fromTextArray(
             context: context,
             data: <List<String>>[
-              <String>['Bill #', 'Customer', 'Items', 'Total', 'Status', 'Date'],
+              <String>['Bill #', 'Customer', 'Items', 'Total', 'Status', 'Reason', 'Date'],
               ...orders.map((o) {
                 final dt = o['created_at']?.toString() ?? '';
                 final ds = dt.isNotEmpty && dt.length >= 10 ? dt.substring(0, 10) : '';
@@ -145,6 +147,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   (o['items_count'] ?? 0).toString(),
                   ((o['grand_total'] as num?)?.toStringAsFixed(2) ?? '0.00'),
                   (o['status'] ?? '').toString(),
+                  (o['refund_reason'] ?? '').toString(),
                   ds,
                 ];
               }),
@@ -336,7 +339,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           child: Table(defaultColumnWidth: const IntrinsicColumnWidth(),
             children: [
               TableRow(decoration: BoxDecoration(color: AppTheme.primaryGreen.withValues(alpha: 0.10)),
-                children: [_th('Bill #'), _th('Salesperson'), _th('Customer'), _th('Phone'), _th('Payment'), _th('Items'), _th('Total'), _th('Status'), _th('Date & Time')]),
+                children: [_th('Bill #'), _th('Salesperson'), _th('Customer'), _th('Phone'), _th('Payment'), _th('Items'), _th('Total'), _th('Status'), _th('Notes / Reason'), _th('Date & Time')]),
               ...orders.asMap().entries.map((e) {
                 final idx = e.key; final o = e.value as Map<String, dynamic>;
                 final total = (o['grand_total'] as num?)?.toDouble() ?? 0.0;
@@ -355,6 +358,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                     _td('${o['items_count'] ?? 0}'),
                     _td('${String.fromCharCode(0x20B9)}${total.toStringAsFixed(2)}', color: AppTheme.primaryGreen, bold: true),
                     _tdStatus(o['status']?.toString() ?? ''),
+                    _td(o['refund_reason']?.toString() ?? ''),
                     _td(ds, fontSize: 11),
                   ]);
               }),
@@ -385,6 +389,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     Color color;
     if (status.toUpperCase() == 'PENDING') color = const Color(0xFFF59E0B);
     else if (status.toUpperCase().contains('PAID') || status.toUpperCase().contains('COMPLETE')) color = AppTheme.primaryGreen;
+    else if (status.toUpperCase().contains('REFUND')) color = AppTheme.dangerRed;
     else color = Colors.grey;
     return Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
