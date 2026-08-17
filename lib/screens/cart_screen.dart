@@ -511,8 +511,11 @@ class _CartScreenState extends State<CartScreen> {
                         label: 'Subtotal',
                         value: '₹${_subtotal.toStringAsFixed(2)}'),
                     SummaryRow(
-                        label: 'GST Tax (5%)',
-                        value: '₹${_tax.toStringAsFixed(2)}'),
+                        label: 'CGST (2.5%)',
+                        value: '₹${(_tax / 2).toStringAsFixed(2)}'),
+                    SummaryRow(
+                        label: 'SGST (2.5%)',
+                        value: '₹${(_tax / 2).toStringAsFixed(2)}'),
                     const Divider(height: 16),
                     SummaryRow(
                       label: 'Grand Total',

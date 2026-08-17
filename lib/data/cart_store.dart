@@ -57,9 +57,7 @@ class CartStore {
 
   static double get subtotal => items.fold(0, (sum, item) => sum + item.total);
 
-  static double get gstSubtotal => items
-      .where((item) => item.product.isGst)
-      .fold(0, (sum, item) => sum + item.total);
+  static double get gstSubtotal => subtotal;
 
   static double get tax => gstSubtotal * 0.05;
 

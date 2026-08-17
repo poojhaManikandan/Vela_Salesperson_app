@@ -437,7 +437,8 @@ class _BillScreenState extends State<BillScreen> {
 
                         // Calculation Breakdown
                         _summaryRow('Subtotal:', '₹${_bill.subtotal.toStringAsFixed(2)}'),
-                        _summaryRow('GST Tax (5%):', '₹${_bill.tax.toStringAsFixed(2)}'),
+                        _summaryRow('CGST (2.5%):', '₹${(_bill.tax / 2).toStringAsFixed(2)}'),
+                        _summaryRow('SGST (2.5%):', '₹${(_bill.tax / 2).toStringAsFixed(2)}'),
                         if (_bill.discount > 0)
                           _summaryRow(
                             'Discount:',

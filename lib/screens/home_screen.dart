@@ -1331,10 +1331,22 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('GST Tax (5%):'.tr,
+                      Text('CGST (2.5%):'.tr,
                           style: TextStyle(
                               fontSize: 12.5, color: context.textSecondary)),
-                      Text('₹${CartStore.tax.toStringAsFixed(2)}',
+                      Text('₹${(CartStore.tax / 2).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('SGST (2.5%):'.tr,
+                          style: TextStyle(
+                              fontSize: 12.5, color: context.textSecondary)),
+                      Text('₹${(CartStore.tax / 2).toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600)),
                     ],

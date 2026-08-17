@@ -272,11 +272,26 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'GST Tax (5%):',
+                          'CGST (2.5%):',
                           style: TextStyle(fontSize: 12),
                         ),
                         Text(
-                          '₹${bill.tax.toStringAsFixed(2)}',
+                          '₹${(bill.tax / 2).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'SGST (2.5%):',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '₹${(bill.tax / 2).toStringAsFixed(2)}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w600),
                         ),
