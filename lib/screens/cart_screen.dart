@@ -20,7 +20,7 @@ class _CartScreenState extends State<CartScreen> {
   late TextEditingController _customerNameController;
   late TextEditingController _customerPhoneController;
   late TextEditingController _shopNameController;
-  late TextEditingController _discountController;
+  late TextEditingController _amountPaidController;
 
   final List<String> _paymentModes = ['Cash', 'UPI / QR', 'Card', 'Credit'];
 
@@ -32,11 +32,11 @@ class _CartScreenState extends State<CartScreen> {
     _customerPhoneController =
         TextEditingController(text: CartStore.customerPhone);
     _shopNameController = TextEditingController(text: CartStore.shopName);
-    _discountController = TextEditingController(
-        text: CartStore.discount > 0
-            ? (CartStore.discount == CartStore.discount.toInt()
-                ? CartStore.discount.toInt().toString()
-                : CartStore.discount.toString())
+    _amountPaidController = TextEditingController(
+        text: CartStore.amountPaid > 0
+            ? (CartStore.amountPaid == CartStore.amountPaid.toInt()
+                ? CartStore.amountPaid.toInt().toString()
+                : CartStore.amountPaid.toString())
             : '');
   }
 
@@ -45,25 +45,15 @@ class _CartScreenState extends State<CartScreen> {
     _customerNameController.dispose();
     _customerPhoneController.dispose();
     _shopNameController.dispose();
-    _discountController.dispose();
+    _amountPaidController.dispose();
     super.dispose();
   }
 
   double get _subtotal => CartStore.subtotal;
   double get _tax => CartStore.tax;
-  double get _discount => CartStore.discount;
   double get _total => CartStore.total;
-
-  void _applyDiscount(double amount) {
-    setState(() {
-      CartStore.discount = amount;
-      _discountController.text = amount > 0
-          ? (amount == amount.toInt()
-              ? amount.toInt().toString()
-              : amount.toString())
-          : '';
-    });
-  }
+  double get _amountPaid => CartStore.amountPaid;
+  double get _balance => (_total - _amountPaid).clamp(0.0, double.infinity);
 
   @override
   Widget build(BuildContext context) {
@@ -453,71 +443,43 @@ class _CartScreenState extends State<CartScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Discount Section
+                  // Amount Paid Section
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Apply Discount',
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              if (CartStore.discount > 0)
-                                TextButton(
-                                  onPressed: () => _applyDiscount(0),
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text('Remove'.tr),
-                                ),
-                            ],
+                          const Text(
+                            'Amount Paid',
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _discountController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (val) {
-                                    final parsed = double.tryParse(val) ?? 0.0;
-                                    setState(() {
-                                      CartStore.discount = parsed;
-                                    });
-                                  },
-                                  decoration: InputDecoration(
-                                    labelText: 'Discount Amount (₹)',
-                                    prefixText: '₹ ',
-                                    isDense: true,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Leave 0 or empty to save as Pending (Credit).',
+                            style: TextStyle(fontSize: 11.5, color: context.textSecondary),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _amountPaidController,
+                            keyboardType: TextInputType.number,
+                            onChanged: (val) {
+                              final parsed = double.tryParse(val) ?? 0.0;
+                              setState(() {
+                                CartStore.amountPaid = parsed;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Amount Paid (₹)',
+                              prefixText: '₹ ',
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              const SizedBox(width: 8),
-                              Wrap(
-                                spacing: 4,
-                                children: [10, 20, 50].map((amt) {
-                                  return ActionChip(
-                                    label: Text('₹$amt', style: const TextStyle(fontSize: 11, color: AppTheme.primaryGreen, fontWeight: FontWeight.bold)),
-                                    padding: EdgeInsets.zero,
-                                    onPressed: () =>
-                                        _applyDiscount(amt.toDouble()),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
@@ -551,17 +513,22 @@ class _CartScreenState extends State<CartScreen> {
                     SummaryRow(
                         label: 'GST Tax (5%)',
                         value: '₹${_tax.toStringAsFixed(2)}'),
-                    if (_discount > 0)
-                      SummaryRow(
-                        label: 'Discount',
-                        value: '-₹${_discount.toStringAsFixed(2)}',
-                      ),
                     const Divider(height: 16),
                     SummaryRow(
                       label: 'Grand Total',
                       value: '₹${_total.toStringAsFixed(2)}',
                       isBold: true,
                     ),
+                    SummaryRow(
+                      label: 'Amount Paid',
+                      value: '₹${_amountPaid.toStringAsFixed(2)}',
+                    ),
+                    if (_balance > 0)
+                      SummaryRow(
+                        label: 'Balance Due',
+                        value: '₹${_balance.toStringAsFixed(2)}',
+                        valueColor: Colors.red.shade600,
+                      ),
                     const SizedBox(height: 14),
                     PrimaryButton(
                       label: 'Generate Bill'.tr,
@@ -579,6 +546,8 @@ class _CartScreenState extends State<CartScreen> {
 
                         final nav = Navigator.of(context);
                         final messenger = ScaffoldMessenger.of(context);
+                        final paid = CartStore.amountPaid;
+                        final isPending = paid < _total;
                         final newBill = Bill(
                           billNumber: BillStore.nextBillNumber(),
                           date: DateTime.now(),
@@ -590,8 +559,10 @@ class _CartScreenState extends State<CartScreen> {
                           items: List.from(CartStore.items),
                           subtotal: _subtotal,
                           tax: _tax,
-                          discount: _discount,
+                          discount: 0,
                           total: _total,
+                          amountPaid: paid,
+                          status: isPending ? 'Pending' : 'Paid',
                         );
                         await BillStore.save(newBill);
                         CartStore.clear();

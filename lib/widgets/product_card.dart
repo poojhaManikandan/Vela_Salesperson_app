@@ -93,32 +93,11 @@ class ProductCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                    Positioned(
-                      top: 8,
-                      right: qtyInCart > 0 ? 80 : 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: product.isGst
-                              ? AppTheme.primaryGreen.withValues(alpha: 0.85)
-                              : Colors.orange.shade800,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          product.isGst ? 'GST 5%' : 'NON-GST',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -127,15 +106,15 @@ class ProductCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 13.5),
+                          fontWeight: FontWeight.w700, fontSize: 12),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 1),
                     Text(
                       product.category,
                       style: TextStyle(
-                          fontSize: 11, color: context.textSecondary),
+                          fontSize: 10, color: context.textSecondary),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

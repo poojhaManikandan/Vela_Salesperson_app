@@ -243,9 +243,42 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                           icon: const Icon(
                                               Icons.more_vert_rounded,
                                               size: 20,
-                                              color: AppTheme.textMuted),
-                                          onSelected: (action) async {
+                                              color: AppTheme.textMuted),                                           onSelected: (action) async {
                                             if (action == 'refund') {
+                                              // Ask for a refund reason
+                                              final reasonCtrl = TextEditingController();
+                                              final reason = await showDialog<String>(
+                                                context: context,
+                                                builder: (ctx) => AlertDialog(
+                                                  title: const Text('Void / Refund Bill'),
+                                                  content: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text('Bill: ${bill.billNumber}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                                      const SizedBox(height: 12),
+                                                      TextField(
+                                                        controller: reasonCtrl,
+                                                        maxLines: 2,
+                                                        decoration: InputDecoration(
+                                                          labelText: 'Refund Reason',
+                                                          hintText: 'e.g. Wrong product, Customer returned...',
+                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  actions: [
+                                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed, foregroundColor: Colors.white),
+                                                      onPressed: () => Navigator.pop(ctx, reasonCtrl.text.trim().isEmpty ? 'Refunded by operator' : reasonCtrl.text.trim()),
+                                                      child: const Text('Confirm Refund'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (reason == null) return;
                                               final updatedBill = Bill(
                                                 billNumber: bill.billNumber,
                                                 date: bill.date,
@@ -260,13 +293,10 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 discount: bill.discount,
                                                 total: bill.total,
                                                 status: 'Refunded',
-                                                notes: 'Refunded by operator',
+                                                notes: reason,
+                                                refundReason: reason,
                                               );
-                                              // Send update to backend
-                                              final success = await BackendService.updateBillStatus(
-                                                bill.billNumber, 
-                                                'Refunded',
-                                              );
+                                              final success = await BackendService.updateBillStatus(bill.billNumber, 'Refunded');
                                               if (success) {
                                                 await BillStore.save(updatedBill);
                                                 setState(() {});
@@ -274,16 +304,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
                                                       backgroundColor: AppTheme.dangerRed,
-                                                      content: Text('Bill ${bill.billNumber} has been refunded/voided.'),
-                                                    ),
-                                                  );
-                                                }
-                                              } else {
-                                                if (context.mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      backgroundColor: AppTheme.dangerRed,
-                                                      content: Text('Failed to update bill status on server. Please ensure the bill exists.'),
+                                                      content: Text('Bill ${bill.billNumber} refunded. Reason: $reason'),
                                                     ),
                                                   );
                                                 }
@@ -307,15 +328,10 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 status: 'Paid',
                                                 notes: bill.notes,
                                               );
-                                              // Send update to backend
                                               final success = await BackendService.updateBillStatus(
-                                                bill.billNumber, 
-                                                'Paid', 
-                                                amountPaid: bill.total
+                                                bill.billNumber, 'Paid', amountPaid: bill.total
                                               );
-                                              
                                               if (success) {
-                                                // Save locally too
                                                 await BillStore.save(updatedBill);
                                                 setState(() {});
                                                 if (context.mounted) {
@@ -326,12 +342,80 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                     ),
                                                   );
                                                 }
-                                              } else {
+                                              }
+                                            }
+                                            if (action == 'update_payment') {
+                                              final amtCtrl = TextEditingController(
+                                                text: bill.amountPaid > 0 ? bill.amountPaid.toStringAsFixed(2) : '',
+                                              );
+                                              final newAmt = await showDialog<double>(
+                                                context: context,
+                                                builder: (ctx) => AlertDialog(
+                                                  title: const Text('Update Amount Paid'),
+                                                  content: Column(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text('Total Bill: ₹${bill.total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                                      Text('Already Paid: ₹${bill.amountPaid.toStringAsFixed(2)}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                                      Text('Due: ₹${bill.dueAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, color: Colors.orange)),
+                                                      const SizedBox(height: 12),
+                                                      TextField(
+                                                        controller: amtCtrl,
+                                                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                        decoration: InputDecoration(
+                                                          labelText: 'New Total Amount Paid (₹)',
+                                                          prefixText: '₹ ',
+                                                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  actions: [
+                                                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                                    ElevatedButton(
+                                                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, foregroundColor: Colors.white),
+                                                      onPressed: () => Navigator.pop(ctx, double.tryParse(amtCtrl.text)),
+                                                      child: const Text('Update'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                              if (newAmt == null) return;
+                                              final newStatus = newAmt >= bill.total ? 'Paid' : 'Pending';
+                                              final updatedBill = Bill(
+                                                billNumber: bill.billNumber,
+                                                date: bill.date,
+                                                employeeName: bill.employeeName,
+                                                customerName: bill.customerName,
+                                                customerPhone: bill.customerPhone,
+                                                shopName: bill.shopName,
+                                                paymentMode: bill.paymentMode,
+                                                items: bill.items,
+                                                subtotal: bill.subtotal,
+                                                tax: bill.tax,
+                                                discount: bill.discount,
+                                                total: bill.total,
+                                                amountPaid: newAmt,
+                                                status: newStatus,
+                                                notes: bill.notes,
+                                              );
+                                              final success = await BackendService.updateBillStatus(
+                                                bill.billNumber, newStatus, amountPaid: newAmt
+                                              );
+                                              if (success) {
+                                                await BillStore.save(updatedBill);
+                                                setState(() {});
+                                                final due = (bill.total - newAmt).clamp(0.0, double.infinity);
                                                 if (context.mounted) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(
-                                                      backgroundColor: AppTheme.dangerRed,
-                                                      content: Text('Failed to update bill status on server.'),
+                                                    SnackBar(
+                                                      backgroundColor: newStatus == 'Paid' ? AppTheme.primaryGreen : Colors.orange,
+                                                      content: Text(
+                                                        newStatus == 'Paid'
+                                                          ? 'Bill fully paid!'
+                                                          : 'Payment updated. Remaining due: ₹${due.toStringAsFixed(2)}',
+                                                      ),
                                                     ),
                                                   );
                                                 }
@@ -355,24 +439,37 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                   ],
                                                 ),
                                               ),
+                                            if (bill.status.toUpperCase() == 'PENDING')
+                                              PopupMenuItem(
+                                                value: 'update_payment',
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(Icons.payments_outlined,
+                                                        size: 18, color: Colors.orange),
+                                                    const SizedBox(width: 8),
+                                                    const Text('Update Payment',
+                                                        style: TextStyle(
+                                                            color: Colors.orange,
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w600)),
+                                                  ],
+                                                ),
+                                              ),
                                             if (bill.status.toUpperCase() == 'PENDING' || bill.status == 'Paid')
                                               PopupMenuItem(
                                                 value: 'refund',
                                                 child: Row(
                                                   children: [
                                                     const Icon(
-                                                        Icons
-                                                            .assignment_return_outlined,
+                                                        Icons.assignment_return_outlined,
                                                         size: 18,
                                                         color: AppTheme.dangerRed),
                                                     const SizedBox(width: 8),
                                                     Text('Void / Refund Bill'.tr,
                                                         style: const TextStyle(
-                                                            color:
-                                                                AppTheme.dangerRed,
+                                                            color: AppTheme.dangerRed,
                                                             fontSize: 13,
-                                                            fontWeight:
-                                                                FontWeight.w600)),
+                                                            fontWeight: FontWeight.w600)),
                                                   ],
                                                 ),
                                               ),
@@ -381,6 +478,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                       ),
                                     ],
                                   ],
+],
                                 ),
                               ],
                             ),

@@ -54,12 +54,14 @@ class SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isBold;
+  final Color? valueColor;
 
   const SummaryRow({
     super.key,
     required this.label,
     required this.value,
     this.isBold = false,
+    this.valueColor,
   });
 
   @override
@@ -78,7 +80,7 @@ class SummaryRow extends StatelessWidget {
           Text(
             value,
             style: style.copyWith(
-              color: isBold ? AppTheme.primaryGreen : context.textPrimary,
+              color: valueColor ?? (isBold ? AppTheme.primaryGreen : context.textPrimary),
             ),
           ),
         ],

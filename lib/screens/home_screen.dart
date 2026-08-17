@@ -835,13 +835,13 @@ class _HomeScreenState extends State<HomeScreen> {
               sliver: SliverLayoutBuilder(
                 builder: (context, constraints) {
                   final crossAxisCount =
-                      constraints.crossAxisExtent > 700 ? 4 : 2;
+                      constraints.crossAxisExtent > 900 ? 5 : constraints.crossAxisExtent > 600 ? 4 : 3;
                   return SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: crossAxisCount,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.82,
+                      mainAxisSpacing: 10,
+                      crossAxisSpacing: 10,
+                      childAspectRatio: 0.92,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {

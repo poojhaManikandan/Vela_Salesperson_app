@@ -16,6 +16,7 @@ class Bill {
   final double amountPaid;
   final String status;
   final String notes;
+  final String refundReason;
 
   const Bill({
     required this.billNumber,
@@ -33,6 +34,7 @@ class Bill {
     this.amountPaid = 0.0,
     this.status = 'Paid',
     this.notes = '',
+    this.refundReason = '',
   });
 
   double get dueAmount => (total - amountPaid).clamp(0.0, double.infinity);
@@ -67,6 +69,8 @@ class Bill {
         'updated_at': date.toIso8601String(),
         'processed_at': null,
         'salesman_id': null,
+        'notes': notes,
+        'refund_reason': refundReason,
       };
 
   factory Bill.fromJson(Map<String, dynamic> json) {
@@ -121,6 +125,7 @@ class Bill {
       status: (json['status'] as String?) ??
           (amountPaid >= total ? 'Paid' : 'Pending'),
       notes: json['notes'] as String? ?? '',
+      refundReason: json['refund_reason'] as String? ?? json['refundReason'] as String? ?? '',
     );
   }
 }

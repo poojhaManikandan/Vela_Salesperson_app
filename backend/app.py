@@ -567,11 +567,8 @@ def update_bill_status(bill_id):
                     success, msg = sync_func(bill_data)
                     
                     if not success:
-                        return jsonify({
-                            'success': False, 
-                            'message': 'Updated locally but failed to sync to Supabase',
-                            'error': msg
-                        }), 500
+                        print(f"[WARNING] Local JSON updated, but Supabase sync failed: {msg}")
+                        # We still return success because local JSON was updated successfully
                         
                     return jsonify({
                         'success': True,
