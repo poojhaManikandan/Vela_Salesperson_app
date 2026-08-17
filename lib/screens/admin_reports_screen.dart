@@ -146,7 +146,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                   pw.Text('Sales & Financial Report', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                   pw.SizedBox(height: 8),
                   pw.Text('Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}', style: const pw.TextStyle(fontSize: 10)),
-                  pw.Text('Salesperson Filter: $_selectedSalesperson', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text('Salesperson Filter: ${_cleanPdfText(_selectedSalesperson)}', style: const pw.TextStyle(fontSize: 10)),
                 ],
               ),
               if (logoImage != null)
@@ -173,11 +173,11 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 final ds = dt.isNotEmpty && dt.length >= 10 ? dt.substring(0, 10) : '';
                 return [
                   (o['bill_number'] ?? '').toString(),
-                  (o['customer_name'] ?? '').toString(),
+                  _cleanPdfText((o['customer_name'] ?? '').toString()),
                   (o['items_count'] ?? 0).toString(),
                   ((o['grand_total'] as num?)?.toStringAsFixed(2) ?? '0.00'),
                   (o['status'] ?? '').toString(),
-                  (o['refund_reason'] ?? '').toString(),
+                  _cleanPdfText((o['refund_reason'] ?? '').toString()),
                   ds,
                 ];
               }),
@@ -195,6 +195,18 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       content: Text('Downloaded $fn (${orders.length} orders)'),
       duration: const Duration(seconds: 4),
     ));
+  }
+
+  String _cleanPdfText(String s) {
+    final sb = StringBuffer();
+    for (final code in s.runes) {
+      if (code >= 32 && code <= 126) {
+        sb.write(String.fromCharCode(code));
+      } else {
+        sb.write('?');
+      }
+    }
+    return sb.toString();
   }
 
   String _c(dynamic v) { final s = (v ?? '').toString().replaceAll('"', '""'); return '"$s"'; }
