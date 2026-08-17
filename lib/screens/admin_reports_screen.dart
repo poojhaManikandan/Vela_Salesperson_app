@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/csv_downloader.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class AdminReportsScreen extends StatefulWidget {
   final bool embedded;
@@ -111,6 +113,57 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     ));
   }
 
+  Future<void> _downloadPdf() async {
+    final pdf = pw.Document();
+    
+    final orders = (_reportData?['orders'] as List?) ?? [];
+    final summary = _reportData!['summary'] as Map<String, dynamic>? ?? {};
+    
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        build: (context) => [
+          pw.Header(level: 0, child: pw.Text('Vela Agency - Sales Report')),
+          pw.Paragraph(text: 'Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}'),
+          pw.Paragraph(text: 'Salesperson: $_selectedSalesperson'),
+          pw.SizedBox(height: 10),
+          pw.Text('Summary:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.Text('Total Revenue: INR ${(summary['total_revenue'] as num?)?.toStringAsFixed(2) ?? '0.00'}'),
+          pw.Text('Total Orders: ${summary['order_count'] ?? 0}'),
+          pw.SizedBox(height: 20),
+          pw.Text('Orders:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.TableHelper.fromTextArray(
+            context: context,
+            data: <List<String>>[
+              <String>['Bill #', 'Customer', 'Items', 'Total', 'Status', 'Date'],
+              ...orders.map((o) {
+                final dt = o['created_at']?.toString() ?? '';
+                final ds = dt.isNotEmpty && dt.length >= 10 ? dt.substring(0, 10) : '';
+                return [
+                  (o['bill_number'] ?? '').toString(),
+                  (o['customer_name'] ?? '').toString(),
+                  (o['items_count'] ?? 0).toString(),
+                  ((o['grand_total'] as num?)?.toStringAsFixed(2) ?? '0.00'),
+                  (o['status'] ?? '').toString(),
+                  ds,
+                ];
+              }),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final bytes = await pdf.save();
+    final fn = 'vela_report_${_fmtDate(_dateFrom)}_${_fmtDate(_dateTo)}.pdf';
+    downloadBytes(bytes, fn);
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Downloaded $fn (${orders.length} orders)'),
+      duration: const Duration(seconds: 4),
+    ));
+  }
+
   String _c(dynamic v) { final s = (v ?? '').toString().replaceAll('"', '""'); return '"$s"'; }
 
   @override
@@ -172,6 +225,14 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
             icon: const Icon(Icons.download_rounded, size: 18),
             label: const Text('Download CSV', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+          ElevatedButton.icon(
+            onPressed: _reportData == null ? null : _downloadPdf,
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600, foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+            label: const Text('Download PDF', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
           ),
         ]),
       ]),

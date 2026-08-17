@@ -12,6 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.6
   shared_preferences: ^2.5.3
   http: ^1.6.0
+  pdf: any
   bluetooth_print_plus: ^2.4.6
 
 dev_dependencies:
