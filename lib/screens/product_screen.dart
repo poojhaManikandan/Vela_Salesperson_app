@@ -43,7 +43,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   color: context.surfaceAlt,
                   child: Image.network(
                     product.imageUrl,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Icon(
                       Icons.inventory_2_outlined,
                       size: 72,

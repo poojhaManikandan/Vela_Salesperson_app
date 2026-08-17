@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/csv_downloader.dart';
 
 class AdminReportsScreen extends StatefulWidget {
   final bool embedded;
@@ -101,8 +102,11 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     }
     final csv = rows.join('\n');
     final fn = 'vela_report_${_fmtDate(_dateFrom)}_${_fmtDate(_dateTo)}.csv';
+    
+    downloadCsvFile(csv, fn);
+
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Report ready: $fn (${orders.length} orders)'),
+      content: Text('Downloaded $fn (${orders.length} orders)'),
       duration: const Duration(seconds: 4),
     ));
   }

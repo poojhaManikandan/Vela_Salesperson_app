@@ -15,6 +15,7 @@ import '../widgets/primary_button.dart';
 import 'admin_reports_screen.dart';
 import 'bill_history_screen.dart';
 import 'cart_screen.dart';
+import 'login_screen.dart';
 import 'product_screen.dart';
 import 'settings_screen.dart';
 
@@ -259,6 +260,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 selectedIcon: Icons.bar_chart_rounded,
               ),
             const Spacer(),
+            ListTile(
+              leading: Icon(
+                Icons.logout_rounded,
+                color: AppTheme.accentOrange,
+              ),
+              title: Text(
+                'Logout',
+                style: TextStyle(
+                  color: AppTheme.accentOrange,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+              onTap: () {
+                CartStore.activeEmployee = null;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              },
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Column(
