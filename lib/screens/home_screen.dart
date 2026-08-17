@@ -274,7 +274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               onTap: () {
-                CartStore.activeEmployee = null;
+                CartStore.activeEmployee = '';
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                   (route) => false,
