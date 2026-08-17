@@ -72,4 +72,23 @@ class ApiService {
       throw Exception('Failed to update product price (HTTP ${response.statusCode})');
     }
   }
+
+  static Future<Map<String, dynamic>> fetchReports({
+    String? dateFrom,
+    String? dateTo,
+    String? salesperson,
+  }) async {
+    final params = <String, String>{};
+    if (dateFrom != null && dateFrom.isNotEmpty) params['date_from'] = dateFrom;
+    if (dateTo != null && dateTo.isNotEmpty) params['date_to'] = dateTo;
+    if (salesperson != null && salesperson.isNotEmpty) params['salesperson'] = salesperson;
+
+    final uri = Uri.parse('$baseUrl/api/reports').replace(queryParameters: params.isEmpty ? null : params);
+    final response = await http.get(uri).timeout(const Duration(seconds: 20));
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load reports (HTTP ${response.statusCode})');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 }

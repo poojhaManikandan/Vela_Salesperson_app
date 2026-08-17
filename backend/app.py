@@ -719,6 +719,125 @@ def get_analytics():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/reports', methods=['GET'])
+def get_reports():
+    """
+    Admin reports endpoint. Supports filtering by date range and salesperson.
+    Query params:
+      - date_from: YYYY-MM-DD  (inclusive)
+      - date_to:   YYYY-MM-DD  (inclusive)
+      - salesperson: string (partial match on submitted_by)
+    Returns:
+      - orders: list of bill summaries
+      - summary: total revenue, order count, avg value
+      - salesperson_breakdown: per-salesperson totals
+      - salespersons: unique salesperson names in data
+    """
+    try:
+        date_from_str = request.args.get('date_from', '').strip()
+        date_to_str = request.args.get('date_to', '').strip()
+        salesperson_filter = request.args.get('salesperson', '').strip().lower()
+
+        date_from = None
+        date_to = None
+        if date_from_str:
+            try:
+                date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        if date_to_str:
+            try:
+                date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        gst_bills = read_json_files(GST_BILLS_DIR)
+        nongst_bills = read_json_files(NONGST_BILLS_DIR)
+        all_bills = gst_bills + nongst_bills
+
+        orders = []
+        salesperson_totals = {}
+        unique_salespersons = set()
+
+        for bill in all_bills:
+            # Parse date
+            created_raw = bill.get('created_at') or bill.get('date') or ''
+            bill_date = None
+            try:
+                clean = str(created_raw).replace('Z', '+00:00')
+                if 'T' in clean:
+                    bill_date = datetime.fromisoformat(clean).date()
+                elif clean:
+                    bill_date = datetime.strptime(clean[:10], '%Y-%m-%d').date()
+            except Exception:
+                bill_date = None
+
+            # Date filter
+            if date_from and bill_date and bill_date < date_from:
+                continue
+            if date_to and bill_date and bill_date > date_to:
+                continue
+
+            salesperson = str(bill.get('submitted_by') or bill.get('employeeName') or 'Unknown').strip()
+            unique_salespersons.add(salesperson)
+
+            # Salesperson filter
+            if salesperson_filter and salesperson_filter not in salesperson.lower():
+                continue
+
+            grand_total = float(bill.get('grand_total') or bill.get('total') or 0.0)
+            items = bill.get('items') or []
+            item_count = sum(int(i.get('quantity', 1)) for i in items if isinstance(i, dict))
+
+            orders.append({
+                'bill_number': bill.get('id') or bill.get('billNumber') or bill.get('bill_no') or '',
+                'salesperson': salesperson,
+                'customer_name': str(bill.get('customer_name') or bill.get('customerName') or 'Walk-in Customer'),
+                'customer_phone': str(bill.get('customer_phone') or bill.get('customerPhone') or ''),
+                'payment_type': str(bill.get('payment_type') or bill.get('paymentMode') or 'Cash'),
+                'items_count': item_count,
+                'grand_total': grand_total,
+                'status': str(bill.get('status') or 'PENDING'),
+                'created_at': str(created_raw),
+                'items': items,
+            })
+
+            salesperson_totals.setdefault(salesperson, {'total_revenue': 0.0, 'order_count': 0})
+            salesperson_totals[salesperson]['total_revenue'] += grand_total
+            salesperson_totals[salesperson]['order_count'] += 1
+
+        # Sort orders newest first
+        orders.sort(key=lambda o: o.get('created_at', ''), reverse=True)
+
+        total_revenue = sum(o['grand_total'] for o in orders)
+        order_count = len(orders)
+        avg_value = (total_revenue / order_count) if order_count > 0 else 0.0
+
+        salesperson_breakdown = [
+            {
+                'salesperson': sp,
+                'total_revenue': round(vals['total_revenue'], 2),
+                'order_count': vals['order_count'],
+            }
+            for sp, vals in sorted(salesperson_totals.items(), key=lambda x: -x[1]['total_revenue'])
+        ]
+
+        return jsonify({
+            'orders': orders,
+            'summary': {
+                'total_revenue': round(total_revenue, 2),
+                'order_count': order_count,
+                'avg_order_value': round(avg_value, 2),
+            },
+            'salesperson_breakdown': salesperson_breakdown,
+            'salespersons': sorted(unique_salespersons),
+        }), 200
+
+    except Exception as e:
+        print(f"[REPORTS ERROR] {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 def read_json_files(target_dir):
     """Helper to read all .json files from a target directory."""
     result = []

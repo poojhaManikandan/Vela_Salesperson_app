@@ -12,6 +12,7 @@ import '../widgets/bill_receipt_sheet.dart';
 import '../widgets/misc_widgets.dart';
 import '../widgets/product_card.dart';
 import '../widgets/primary_button.dart';
+import 'admin_reports_screen.dart';
 import 'bill_history_screen.dart';
 import 'cart_screen.dart';
 import 'product_screen.dart';
@@ -176,10 +177,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 850;
 
+    final isAdmin = CartStore.activeEmployee == '9344486055';
     final pages = [
       _buildHomeBody(isWide),
       const BillHistoryScreen(embedded: true),
       const SettingsScreen(embedded: true),
+      if (isAdmin) const AdminReportsScreen(embedded: true),
     ];
 
     return Scaffold(
@@ -248,6 +251,13 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icons.settings_outlined,
               selectedIcon: Icons.settings_rounded,
             ),
+            if (CartStore.activeEmployee == '9344486055')
+              _drawerTile(
+                index: 3,
+                label: 'Reports',
+                icon: Icons.bar_chart_outlined,
+                selectedIcon: Icons.bar_chart_rounded,
+              ),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -333,6 +343,24 @@ class _HomeScreenState extends State<HomeScreen> {
           'System Settings',
           style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
         ),
+      );
+    }
+    if (_navIndex == 3) {
+      return AppBar(
+        title: const Text(
+          'Admin Sales Reports',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Chip(
+              label: const Text('Admin Only', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700)),
+              backgroundColor: AppTheme.primaryGreen,
+              padding: EdgeInsets.zero,
+            ),
+          ),
+        ],
       );
     }
 
