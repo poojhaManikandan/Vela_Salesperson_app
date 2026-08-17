@@ -20,7 +20,7 @@ class Bill {
   final String notes;
   final String refundReason;
 
-  const Bill({
+  Bill({
     required this.billNumber,
     required this.date,
     required this.employeeName,
