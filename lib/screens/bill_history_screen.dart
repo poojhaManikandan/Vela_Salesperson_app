@@ -243,7 +243,8 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                           icon: const Icon(
                                               Icons.more_vert_rounded,
                                               size: 20,
-                                              color: AppTheme.textMuted),                                           onSelected: (action) async {
+                                              color: AppTheme.textMuted),
+                                          onSelected: (action) async {
                                             if (action == 'refund') {
                                               // Ask for a refund reason
                                               final reasonCtrl = TextEditingController();
@@ -478,7 +479,6 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                       ),
                                     ],
                                   ],
-],
                                 ),
                               ],
                             ),
