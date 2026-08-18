@@ -122,6 +122,14 @@ def extract_bill_row(bill_data):
     if salesman_id is not None:
         row["salesman_id"] = salesman_id
 
+    # --- Payment tracking (amount_paid / balance) ---
+    amount_paid = float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0)
+    grand_total  = float(row.get('grand_total') or 0.0)
+    balance      = max(round(grand_total - amount_paid, 2), 0.0)
+    row["amount_paid"]     = amount_paid
+    row["balance"]         = balance
+    row["payment_status"]  = 'Paid' if amount_paid >= grand_total and grand_total > 0 else 'Pending'
+
     return row
 
 
@@ -239,6 +247,14 @@ def sync_gst_bill(bill_data):
         "processed_at":   str(bill_data.get('processed_at')) if bill_data.get('processed_at') else None,
         "salesman_id":    salesman_id,
     }
+
+    # --- Payment tracking for gst_bills (update_payment, balance, payment_status) ---
+    amount_paid    = float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0)
+    grand_total_v  = float(row.get('grand_total') or 0.0)
+    balance        = max(round(grand_total_v - amount_paid, 2), 0.0)
+    row["update_payment"]  = amount_paid
+    row["balance"]         = balance
+    row["payment_status"]  = 'Paid' if amount_paid >= grand_total_v and grand_total_v > 0 else 'Pending'
 
     endpoint = f"{SUPABASE_URL}/rest/v1/{GST_BILLS_TABLE}?on_conflict=id"
     headers = {

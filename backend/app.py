@@ -173,6 +173,7 @@ def format_bill_to_requested_schema(bill_data):
         "price_list": str(bill_data.get('price_list') or bill_data.get('priceList') or 'Retail'),
         "items": format_items_to_salesperson_bills_schema(bill_data.get('items', [])),
         "grand_total": float(bill_data.get('total') or bill_data.get('grand_total') or 0.0),
+        "amount_paid": float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0),
         "status": _normalize_bill_status(str(bill_data.get('status') or 'Pending')),
         "created_at": created_at,
         "updated_at": bill_data.get('updated_at') or created_at,
@@ -399,6 +400,7 @@ def save_bill():
                 'tax': gst_tax,
                 'discount': 0.0,
                 'total': round(gst_subtotal + gst_tax, 2),
+                'amount_paid': float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0),
                 'taxType': 'GST',
                 'isGstSplit': True
             })
@@ -422,6 +424,7 @@ def save_bill():
                 'tax': 0.0,
                 'discount': 0.0,
                 'total': nongst_subtotal,
+                'amount_paid': float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0),
                 'taxType': 'NON_GST',
                 'isGstSplit': True
             })
@@ -555,10 +558,17 @@ def update_bill_status(bill_id):
                     bill_data['status'] = new_status
                     bill_data['updated_at'] = datetime.now().isoformat()
                     
-                    # Also update amount_paid if provided
+                    # Also update amount_paid and derived payment fields if provided
                     if 'amountPaid' in data:
                         bill_data['amount_paid'] = float(data['amountPaid'])
-                    
+
+                    # Recompute balance & payment_status
+                    grand_total  = float(bill_data.get('grand_total') or bill_data.get('total') or 0.0)
+                    paid_so_far  = float(bill_data.get('amount_paid') or 0.0)
+                    bill_data['balance']         = max(round(grand_total - paid_so_far, 2), 0.0)
+                    bill_data['payment_status']  = 'Paid' if paid_so_far >= grand_total and grand_total > 0 else 'Pending'
+                    bill_data['update_payment']  = paid_so_far  # for gst_bills column
+
                     # Also update refund_reason & notes if provided
                     if 'refundReason' in data:
                         bill_data['refund_reason'] = data['refundReason']
