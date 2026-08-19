@@ -265,7 +265,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                 String productsText = '';
                 for (int i = 0; i < itemsList.length; i++) {
                   final item = itemsList[i];
-                  final name = item['name']?.toString() ?? 'Item';
+                  final name = (item['product_name'] ?? item['name'])?.toString() ?? 'Item';
                   final qty = item['quantity']?.toString() ?? '1';
                   productsText += '${i + 1}. $name (x$qty)\n';
                 }
