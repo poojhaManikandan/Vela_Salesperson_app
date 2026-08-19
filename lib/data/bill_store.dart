@@ -79,6 +79,15 @@ class BillStore {
     await BackendService.saveBillToBackend(bill);
   }
 
+  /// Updates a bill locally without sending the entire payload to the backend
+  /// (Useful when a specific API like `updateBillStatus` has already synced the change)
+  static Future<void> updateLocal(Bill bill) async {
+    await load();
+    bills.removeWhere((item) => item.billNumber == bill.billNumber);
+    bills.insert(0, bill);
+    await _persist();
+  }
+
   static Map<String, dynamic> _toStorageJson(Bill bill) {
     final json = bill.toJson();
     json['status'] = bill.status;

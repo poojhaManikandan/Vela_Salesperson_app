@@ -129,8 +129,12 @@ class EscPosReceipt {
     // Totals
     // ---------------------------------------------------------------------
     summaryRow('Subtotal:', _money(bill.subtotal));
-    summaryRow('CGST (2.5%):', _money(bill.cgst));
-    summaryRow('SGST (2.5%):', _money(bill.sgst));
+    if (bill.cgst > 0) {
+      summaryRow('CGST (2.5%):', _money(bill.cgst));
+    }
+    if (bill.sgst > 0) {
+      summaryRow('SGST (2.5%):', _money(bill.sgst));
+    }
     if (bill.discount > 0) {
       summaryRow('Discount:', '-${_money(bill.discount)}');
     }

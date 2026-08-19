@@ -161,14 +161,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _handleScrollNotification(ScrollNotification notification) {
-    if (notification.metrics.extentAfter <= 300 &&
-        !notification.metrics.outOfRange &&
-        _visibleProductCount < _filteredProducts.length) {
-      _loadMoreProducts();
-    }
-  }
-
   int _countForCategory(String cat) {
     if (cat == 'All') return _products.length;
     return _products.where((p) => p.category == cat).length;
@@ -612,13 +604,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final products = filteredProducts.take(_visibleProductCount).toList();
     final paddingBottom = !isWide && CartStore.items.isNotEmpty ? 90.0 : 24.0;
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        _handleScrollNotification(notification);
-        return false;
-      },
-      child: CustomScrollView(
-        slivers: [
+    return CustomScrollView(
+      slivers: [
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
@@ -882,24 +869,37 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-          if (_isLoadingMore)
-            const SliverToBoxAdapter(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 18),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: AppTheme.primaryGreen,
-                    ),
-                  ),
+          if (_visibleProductCount < filteredProducts.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+                child: Center(
+                  child: _isLoadingMore
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: AppTheme.primaryGreen,
+                          ),
+                        )
+                      : OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryGreen,
+                            side: const BorderSide(color: AppTheme.primaryGreen),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                          icon: const Icon(Icons.expand_more_rounded),
+                          label: const Text(
+                            'Load More',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          onPressed: _loadMoreProducts,
+                        ),
                 ),
               ),
             ),
         ],
-      ),
     );
   }
 

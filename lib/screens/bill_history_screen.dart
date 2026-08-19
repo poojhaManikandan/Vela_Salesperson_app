@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../data/bill_store.dart';
 import '../models/bill.dart';
 import '../services/api_service.dart';
@@ -293,13 +294,14 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 tax: bill.tax,
                                                 discount: bill.discount,
                                                 total: bill.total,
+                                                amountPaid: bill.amountPaid,
                                                 status: 'Refunded',
                                                 notes: reason,
                                                 refundReason: reason,
                                               );
                                               final success = await BackendService.updateBillStatus(bill.billNumber, 'Refunded', refundReason: reason);
                                               if (success) {
-                                                await BillStore.save(updatedBill);
+                                                await BillStore.updateLocal(updatedBill);
                                                 setState(() {});
                                                 if (context.mounted) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -346,13 +348,11 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                               }
                                             }
                                             if (action == 'update_payment') {
-                                              final amtCtrl = TextEditingController(
-                                                text: bill.amountPaid > 0 ? bill.amountPaid.toStringAsFixed(2) : '',
-                                              );
-                                              final newAmt = await showDialog<double>(
+                                              final amtCtrl = TextEditingController(text: '');
+                                              double? newPayment = await showDialog<double>(
                                                 context: context,
                                                 builder: (ctx) => AlertDialog(
-                                                  title: const Text('Update Amount Paid'),
+                                                  title: const Text('Add Payment'),
                                                   content: Column(
                                                     mainAxisSize: MainAxisSize.min,
                                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,8 +364,19 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                       TextField(
                                                         controller: amtCtrl,
                                                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                                        inputFormatters: [
+                                                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                                                        ],
+                                                        onChanged: (val) {
+                                                          final numVal = double.tryParse(val);
+                                                          if (numVal != null && numVal > bill.dueAmount) {
+                                                            amtCtrl.text = bill.dueAmount.toStringAsFixed(2);
+                                                            // Keep cursor at the end
+                                                            amtCtrl.selection = TextSelection.fromPosition(TextPosition(offset: amtCtrl.text.length));
+                                                          }
+                                                        },
                                                         decoration: InputDecoration(
-                                                          labelText: 'New Total Amount Paid (₹)',
+                                                          labelText: 'Amount Paying Now (₹)',
                                                           prefixText: '₹ ',
                                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                                         ),
@@ -377,13 +388,20 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                     ElevatedButton(
                                                       style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryGreen, foregroundColor: Colors.white),
                                                       onPressed: () => Navigator.pop(ctx, double.tryParse(amtCtrl.text)),
-                                                      child: const Text('Update'),
+                                                      child: const Text('Add Payment'),
                                                     ),
                                                   ],
                                                 ),
                                               );
-                                              if (newAmt == null) return;
-                                              final newStatus = newAmt >= bill.total ? 'Paid' : 'Pending';
+                                              if (newPayment == null || newPayment <= 0) return;
+
+                                              if (newPayment > bill.dueAmount) {
+                                                newPayment = bill.dueAmount;
+                                              }
+
+                                              final newTotalPaid = bill.amountPaid + newPayment;
+                                              final newStatus = newTotalPaid >= bill.total ? 'Paid' : 'Pending';
+
                                               final updatedBill = Bill(
                                                 billNumber: bill.billNumber,
                                                 date: bill.date,
@@ -397,17 +415,17 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                 tax: bill.tax,
                                                 discount: bill.discount,
                                                 total: bill.total,
-                                                amountPaid: newAmt,
+                                                amountPaid: newTotalPaid,
                                                 status: newStatus,
                                                 notes: bill.notes,
                                               );
                                               final success = await BackendService.updateBillStatus(
-                                                bill.billNumber, newStatus, amountPaid: newAmt
+                                                bill.billNumber, newStatus, amountPaid: newTotalPaid
                                               );
                                               if (success) {
                                                 await BillStore.save(updatedBill);
                                                 setState(() {});
-                                                final due = (bill.total - newAmt).clamp(0.0, double.infinity);
+                                                final due = (bill.total - newTotalPaid).clamp(0.0, double.infinity);
                                                 if (context.mounted) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
@@ -415,7 +433,7 @@ class _BillHistoryScreenState extends State<BillHistoryScreen> {
                                                       content: Text(
                                                         newStatus == 'Paid'
                                                           ? 'Bill fully paid!'
-                                                          : 'Payment updated. Remaining due: ₹${due.toStringAsFixed(2)}',
+                                                          : 'Payment added. Remaining due: ₹${due.toStringAsFixed(2)}',
                                                       ),
                                                     ),
                                                   );

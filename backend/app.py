@@ -51,11 +51,13 @@ def _normalize_payment_type(payment_type):
 
 def _normalize_bill_status(status):
     """
-    Maps any incoming bill status to 'PENDING'.
-    The live Supabase database constraint 'salesperson_bills_status_check'
-    ONLY allows the exact string 'PENDING'.
+    Maps incoming bill status appropriately.
+    (Note: The live Supabase database constraint 'salesperson_bills_status_check'
+    currently ONLY allows 'PENDING', which causes sync errors for 'Refunded', 
+    but we must preserve the actual status for local JSON files.)
     """
-    return 'PENDING'
+    s = str(status or 'PENDING').strip()
+    return s
 
 
 def format_items_to_salesperson_bills_schema(items):
@@ -162,6 +164,7 @@ def format_bill_to_requested_schema(bill_data):
 
     formatted = {
         "id": bill_id,
+        "billNumber": str(bill_data.get('billNumber') or bill_data.get('bill_no') or ''),
         "submitted_by": str(bill_data.get('submitted_by') or bill_data.get('employeeName') or 'Unknown Cashier'),
         "customer_id": str(bill_data['customer_id']) if bill_data.get('customer_id') else None,
         "customer_name": str(bill_data.get('customer_name') or bill_data.get('customerName') or 'Walk-in Customer'),
@@ -538,6 +541,7 @@ def update_bill_status(bill_id):
             return jsonify({'error': 'Missing status in request body'}), 400
 
         new_status = data['status']
+        updated_count = 0
         
         # We don't know if it's in GST or NON-GST, so we search both
         for db_dir, sync_func in [(GST_BILLS_DIR, sync_gst_bill), (NONGST_BILLS_DIR, sync_nongst_bill)]:
@@ -553,7 +557,18 @@ def update_bill_status(bill_id):
                     bill_data = json.load(f)
                 
                 # Check if this is the target bill
-                if bill_data.get('id') == bill_id or bill_data.get('bill_id') == bill_id or bill_data.get('billNumber') == bill_id or bill_data.get('bill_no') == bill_id or filename.startswith(f"{bill_id}"):
+                is_match = (
+                    bill_data.get('id') == bill_id or 
+                    bill_data.get('bill_id') == bill_id or 
+                    bill_data.get('billNumber') == bill_id or 
+                    bill_data.get('bill_no') == bill_id or 
+                    filename == f"{bill_id}.json" or 
+                    filename == f"{bill_id}-GST.json" or 
+                    filename == f"{bill_id}-NONGST.json" or
+                    (bill_id.startswith('INV-') and filename.startswith(f"{bill_id}-"))
+                )
+                
+                if is_match:
                     # Found it! Update status
                     bill_data['status'] = new_status
                     bill_data['updated_at'] = datetime.now().isoformat()
@@ -583,14 +598,16 @@ def update_bill_status(bill_id):
                     
                     if not success:
                         print(f"[WARNING] Local JSON updated, but Supabase sync failed: {msg}")
-                        # We still return success because local JSON was updated successfully
-                        
-                    return jsonify({
-                        'success': True,
-                        'message': 'Bill status updated successfully',
-                        'status': new_status
-                    }), 200
                     
+                    updated_count += 1
+                    
+        if updated_count > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Bill status updated successfully',
+                'status': new_status
+            }), 200
+            
         return jsonify({'error': f'Bill {bill_id} not found'}), 404
         
     except Exception as e:
@@ -802,7 +819,7 @@ def get_reports():
             item_count = sum(int(i.get('quantity', 1)) for i in items if isinstance(i, dict))
 
             orders.append({
-                'bill_number': bill.get('id') or bill.get('billNumber') or bill.get('bill_no') or '',
+                'bill_number': bill.get('billNumber') or bill.get('bill_no') or bill.get('id') or '',
                 'salesperson': salesperson,
                 'customer_name': str(bill.get('customer_name') or bill.get('customerName') or 'Walk-in Customer'),
                 'customer_phone': str(bill.get('customer_phone') or bill.get('customerPhone') or ''),

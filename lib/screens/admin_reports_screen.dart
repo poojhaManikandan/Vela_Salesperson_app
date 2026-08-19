@@ -130,54 +130,158 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
       debugPrint('Failed to load logo: $e');
     }
     
+    final generatedAt = DateTime.now();
+    final generatedAtStr = '${generatedAt.day}-${generatedAt.month}-${generatedAt.year} ${generatedAt.hour}:${generatedAt.minute.toString().padLeft(2, '0')}';
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('VELA AGENCY', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
-                  pw.SizedBox(height: 4),
-                  pw.Text('Sales & Financial Report', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
-                  pw.SizedBox(height: 8),
-                  pw.Text('Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}', style: const pw.TextStyle(fontSize: 10)),
-                  pw.Text('Salesperson Filter: ${_cleanPdfText(_selectedSalesperson)}', style: const pw.TextStyle(fontSize: 10)),
-                ],
-              ),
-              if (logoImage != null)
-                pw.Container(
-                  width: 70,
-                  height: 70,
-                  child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+        margin: const pw.EdgeInsets.all(32),
+        header: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('VELA AGENCY', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                    pw.SizedBox(height: 4),
+                    pw.Text('Sales & Financial Report', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                    pw.SizedBox(height: 8),
+                    pw.Text('Generated On: $generatedAtStr', style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.grey900)),
+                    pw.SizedBox(height: 2),
+                    pw.Text('Date Range: ${_fmtDate(_dateFrom)} to ${_fmtDate(_dateTo)}', style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey800)),
+                    pw.Text('Salesperson: ${_cleanPdfText(_selectedSalesperson)}', style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey800)),
+                  ],
                 ),
-            ],
+                if (logoImage != null)
+                  pw.Container(
+                    width: 80,
+                    height: 80,
+                    child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                  ),
+              ],
+            ),
+            pw.SizedBox(height: 10),
+            pw.Divider(thickness: 2, color: PdfColors.green800),
+            pw.SizedBox(height: 16),
+          ],
+        ),
+        footer: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
+          children: [
+            pw.Divider(thickness: 1, color: PdfColors.grey400),
+            pw.SizedBox(height: 4),
+            pw.Text('Page ${context.pageNumber} of ${context.pagesCount}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+          ],
+        ),
+        build: (context) => [
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.green50,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+              border: pw.Border.all(color: PdfColors.green200),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+              children: [
+                pw.Column(
+                  children: [
+                    pw.Text('Total Revenue', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 4),
+                    pw.Text('INR ${(summary['total_revenue'] as num?)?.toStringAsFixed(2) ?? '0.00'}', style: pw.TextStyle(fontSize: 18, color: PdfColors.green800, fontWeight: pw.FontWeight.bold)),
+                  ],
+                ),
+                pw.Column(
+                  children: [
+                    pw.Text('Total Orders', style: pw.TextStyle(fontSize: 12, color: PdfColors.grey700, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 4),
+                    pw.Text('${summary['order_count'] ?? 0}', style: pw.TextStyle(fontSize: 18, color: PdfColors.green800, fontWeight: pw.FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
           ),
-          pw.Divider(thickness: 1.5, color: PdfColors.green),
-          pw.SizedBox(height: 10),
-          pw.Text('Summary:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-          pw.Text('Total Revenue: INR ${(summary['total_revenue'] as num?)?.toStringAsFixed(2) ?? '0.00'}'),
-          pw.Text('Total Orders: ${summary['order_count'] ?? 0}'),
-          pw.SizedBox(height: 20),
-          pw.Text('Orders:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 24),
+          pw.Text('Order Details:', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.grey800)),
+          pw.SizedBox(height: 8),
           pw.TableHelper.fromTextArray(
             context: context,
+            headerAlignment: pw.Alignment.centerLeft,
+            cellAlignment: pw.Alignment.centerLeft,
+            headerDecoration: const pw.BoxDecoration(
+              color: PdfColors.green800,
+            ),
+            headerStyle: pw.TextStyle(
+              color: PdfColors.white,
+              fontWeight: pw.FontWeight.bold,
+              fontSize: 10,
+            ),
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(
+                  color: PdfColors.grey300,
+                  width: .5,
+                ),
+              ),
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 9),
+            cellPadding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(0.5), // S.No.
+              1: const pw.FlexColumnWidth(1.0), // Bill # (Truncated)
+              2: const pw.FlexColumnWidth(1.8), // Customer
+              3: const pw.FlexColumnWidth(1.5), // Products
+              4: const pw.FlexColumnWidth(1.0), // Total
+              5: const pw.FlexColumnWidth(1.4), // Status & Reason
+              6: const pw.FlexColumnWidth(1.4), // Date & Time
+            },
             data: <List<String>>[
-              <String>['Bill #', 'Customer', 'Items', 'Total', 'Status', 'Reason', 'Date'],
-              ...orders.map((o) {
-                final dt = o['created_at']?.toString() ?? '';
-                final ds = dt.isNotEmpty && dt.length >= 10 ? dt.substring(0, 10) : '';
-                return [
-                  (o['bill_number'] ?? '').toString(),
+              <String>['S.No', 'Bill #', 'Customer', 'Products', 'Total', 'Status', 'Date'],
+              ...orders.asMap().entries.map((entry) {
+                final int index = entry.key;
+                final o = entry.value;
+                String ds = o['created_at']?.toString() ?? '';
+                try { 
+                  if (ds.isNotEmpty) { 
+                    final dt = DateTime.parse(ds.replaceAll('Z','').split('+')[0]); 
+                    ds = '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2,'0')}:${dt.minute.toString().padLeft(2,'0')}'; 
+                  } 
+                } catch (_) {}
+                
+                final status = (o['status'] ?? '').toString();
+                final rawReason = (o['refund_reason'] ?? '').toString();
+                
+                String statusText = status;
+                
+                String bn = (o['bill_number'] ?? '').toString();
+                double total = (o['grand_total'] as num?)?.toDouble() ?? 0.0;
+                
+                final itemsList = (o['items'] as List?) ?? [];
+                String productsText = '';
+                for (int i = 0; i < itemsList.length; i++) {
+                  final item = itemsList[i];
+                  final name = item['name']?.toString() ?? 'Item';
+                  final qty = item['quantity']?.toString() ?? '1';
+                  productsText += '${i + 1}. $name (x$qty)\n';
+                }
+                if (productsText.isNotEmpty) {
+                  productsText = productsText.trimRight();
+                } else {
+                  productsText = '${o['items_count'] ?? 0} Items';
+                }
+                
+                return <String>[
+                  (index + 1).toString(),
+                  _cleanPdfText(bn),
                   _cleanPdfText((o['customer_name'] ?? '').toString()),
-                  (o['items_count'] ?? 0).toString(),
-                  ((o['grand_total'] as num?)?.toStringAsFixed(2) ?? '0.00'),
-                  (o['status'] ?? '').toString(),
-                  _cleanPdfText((o['refund_reason'] ?? '').toString()),
+                  _cleanPdfText(productsText),
+                  'Rs.${total.toStringAsFixed(2)}',
+                  statusText,
                   ds,
                 ];
               }),
@@ -381,7 +485,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
           child: Table(defaultColumnWidth: const IntrinsicColumnWidth(),
             children: [
               TableRow(decoration: BoxDecoration(color: AppTheme.primaryGreen.withValues(alpha: 0.10)),
-                children: [_th('Bill #'), _th('Salesperson'), _th('Customer'), _th('Phone'), _th('Payment'), _th('Items'), _th('Total'), _th('Status'), _th('Notes / Reason'), _th('Date & Time')]),
+                children: [_th('Bill #'), _th('Salesperson'), _th('Customer'), _th('Phone'), _th('Payment'), _th('Items'), _th('Total'), _th('Status'), _th('Reason'), _th('Date & Time')]),
               ...orders.asMap().entries.map((e) {
                 final idx = e.key; final o = e.value as Map<String, dynamic>;
                 final total = (o['grand_total'] as num?)?.toDouble() ?? 0.0;
@@ -400,7 +504,7 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                     _td('${o['items_count'] ?? 0}'),
                     _td('${String.fromCharCode(0x20B9)}${total.toStringAsFixed(2)}', color: AppTheme.primaryGreen, bold: true),
                     _tdStatus(o['status']?.toString() ?? ''),
-                    _td(o['refund_reason']?.toString() ?? ''),
+                    _td(o['refund_reason']?.toString() ?? '', color: AppTheme.dangerRed, fontSize: 11),
                     _td(ds, fontSize: 11),
                   ]);
               }),
@@ -434,8 +538,13 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     else if (status.toUpperCase().contains('REFUND')) color = AppTheme.dangerRed;
     else color = Colors.grey;
     return Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
-        child: Text(status, textAlign: TextAlign.center, style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w700))));
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+            child: Text(status, textAlign: TextAlign.center, style: TextStyle(color: color, fontSize: 10.5, fontWeight: FontWeight.w700))),
+        ],
+      ));
   }
 }

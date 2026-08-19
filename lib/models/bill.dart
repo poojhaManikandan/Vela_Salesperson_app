@@ -39,8 +39,18 @@ class Bill {
     this.status = 'Paid',
     this.notes = '',
     this.refundReason = '',
-  })  : cgst = cgst ?? (tax != null ? tax / 2 : GSTCalculator.cgst(subtotal, rate: 2.5)),
-        sgst = sgst ?? (tax != null ? tax / 2 : GSTCalculator.sgst(subtotal, rate: 2.5));
+  })  : cgst = cgst ??
+            (tax != null
+                ? tax / 2
+                : GSTCalculator.cgst(
+                    items.where((item) => item.product.isGst).fold(0.0, (sum, item) => sum + item.total),
+                    rate: 2.5)),
+        sgst = sgst ??
+            (tax != null
+                ? tax / 2
+                : GSTCalculator.sgst(
+                    items.where((item) => item.product.isGst).fold(0.0, (sum, item) => sum + item.total),
+                    rate: 2.5));
 
   /// Total tax for backward compatibility.
   double get tax => cgst + sgst;

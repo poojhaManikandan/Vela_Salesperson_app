@@ -58,11 +58,14 @@ class CartStore {
 
   static double get subtotal => items.fold(0, (sum, item) => sum + item.total);
 
+  static double get gstSubtotal =>
+      items.where((item) => item.product.isGst).fold(0.0, (sum, item) => sum + item.total);
+
   /// CGST at 2.5% — calculated independently with ROUND_HALF_UP (matches Python reference).
-  static double get cgst => GSTCalculator.cgst(subtotal, rate: 2.5);
+  static double get cgst => GSTCalculator.cgst(gstSubtotal, rate: 2.5);
 
   /// SGST at 2.5% — calculated independently with ROUND_HALF_UP (matches Python reference).
-  static double get sgst => GSTCalculator.sgst(subtotal, rate: 2.5);
+  static double get sgst => GSTCalculator.sgst(gstSubtotal, rate: 2.5);
 
   /// Total tax = CGST + SGST (both rounded independently before summing).
   static double get tax => cgst + sgst;

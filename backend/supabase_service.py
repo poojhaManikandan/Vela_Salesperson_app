@@ -122,13 +122,9 @@ def extract_bill_row(bill_data):
     if salesman_id is not None:
         row["salesman_id"] = salesman_id
 
-    # --- Payment tracking (amount_paid / balance) ---
+    # --- Payment tracking (amount_paid) ---
     amount_paid = float(bill_data.get('amount_paid') or bill_data.get('amountPaid') or 0.0)
-    grand_total  = float(row.get('grand_total') or 0.0)
-    balance      = max(round(grand_total - amount_paid, 2), 0.0)
-    row["amount_paid"]     = amount_paid
-    row["balance"]         = balance
-    row["payment_status"]  = 'Paid' if amount_paid >= grand_total and grand_total > 0 else 'Pending'
+    row["amount_paid"] = amount_paid
 
     return row
 

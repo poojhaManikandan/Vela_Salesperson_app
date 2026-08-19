@@ -267,36 +267,40 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'CGST (2.5%):',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        Text(
-                          '₹${bill.cgst.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'SGST (2.5%):',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        Text(
-                          '₹${bill.sgst.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                              fontSize: 12, fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
+                    if (bill.cgst > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'CGST (2.5%):',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            '₹${bill.cgst.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (bill.sgst > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'SGST (2.5%):',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          Text(
+                            '₹${bill.sgst.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (bill.discount > 0) ...[
                       const SizedBox(height: 4),
                       Row(
@@ -404,7 +408,7 @@ class __BillReceiptModalContentState extends State<_BillReceiptModalContent> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
+                            child: Text(   
                               bill.refundReason,
                               textAlign: TextAlign.right,
                               style: const TextStyle(
